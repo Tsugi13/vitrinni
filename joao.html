@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Vitrinni</title>
+		<script src="https://cdn.tailwindcss.com"></script>
+	</head>
+
+	<body class="bg-gray-100 font-sans">
+
+		<!-- HEADER -->
+		<header class="bg-red-600 text-white p-3 flex flex-col md:flex-row items-center gap-2">
+			  <h1 class="text-lg md:text-xl font-bold">Vitrinni 🥊</h1>
+			    <input id="busca" placeholder="Buscar produtos..." 
+					        class="p-2 rounded text-black w-full md:w-1/2">
+		</header>
+
+		<!-- CATEGORIAS -->
+		<div class="flex overflow-x-auto gap-2 p-3 bg-white shadow">
+			  <button class="categoria bg-red-500 text-white px-3 py-1 rounded">Todos</button>
+			    <button class="categoria px-3 py-1 bg-gray-200 rounded">Luva</button>
+			      <button class="categoria px-3 py-1 bg-gray-200 rounded">Kimono</button>
+			        <button class="categoria px-3 py-1 bg-gray-200 rounded">Caneleira</button>
+				  <button class="categoria px-3 py-1 bg-gray-200 rounded">Bandagem</button>
+				    <button class="categoria px-3 py-1 bg-gray-200 rounded">Protetor</button>
+				      <button class="categoria px-3 py-1 bg-gray-200 rounded">Equipamentos</button>
+		</div>
+
+		<!-- PRODUTOS -->
+		<div id="produtos" class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4"></div>
+
+		<!-- BOTÃO CARRINHO MOBILE -->
+		<button onclick="toggleCarrinho()" 
+			class="fixed bottom-4 right-4 bg-red-600 text-white p-4 rounded-full shadow-lg md:hidden">
+			🛒
+		</button>
+
+		<!-- CARRINHO -->
+		<div id="carrinhoBox" class="fixed right-0 top-0 w-full md:w-80 h-full bg-white shadow-lg p-4 overflow-auto translate-x-full md:translate-x-0 transition">
+			  <h2 class="font-bold mb-2">🛒 Carrinho</h2>
+			    <ul id="carrinho"></ul>
+			      <p id="total" class="font-bold mt-2"></p>
+			        <button id="finalizar" class="bg-green-600 text-white w-full p-2 mt-2 rounded">Finalizar Compra</button>
+		</div>
+
+		<script>
+			const produtos = [
+				  // LUVAS
+				  {nome:"Luva Everlast", preco:199.9, cat:"Luva"},
+				  {nome:"Luva Adidas", preco:229.9, cat:"Luva"},
+				  {nome:"Luva Profissional", preco:259.9, cat:"Luva"},
+				  {nome:"Luva Iniciante", preco:149.9, cat:"Luva"},
+
+				  // KIMONOS
+				  {nome:"Kimono Branco", preco:349.9, cat:"Kimono"},
+				  {nome:"Kimono Azul", preco:369.9, cat:"Kimono"},
+				  {nome:"Kimono Preto", preco:389.9, cat:"Kimono"},
+
+				  // CANELEIRAS
+				  {nome:"Caneleira Simples", preco:129.9, cat:"Caneleira"},
+				  {nome:"Caneleira Profissional", preco:179.9, cat:"Caneleira"},
+
+				  // BANDAGENS
+				  {nome:"Bandagem 3m", preco:29.9, cat:"Bandagem"},
+				  {nome:"Bandagem 5m", preco:39.9, cat:"Bandagem"},
+
+				  // PROTETORES
+				  {nome:"Protetor Bucal Básico", preco:39.9, cat:"Protetor"},
+				  {nome:"Protetor Bucal Profissional", preco:59.9, cat:"Protetor"},
+
+				  // EQUIPAMENTOS
+				  {nome:"Saco de Pancada 1m", preco:499.9, cat:"Equipamentos"},
+				  {nome:"Saco de Pancada Profissional", preco:699.9, cat:"Equipamentos"},
+				  {nome:"Corda de Pular", preco:49.9, cat:"Equipamentos"},
+				  {nome:"Manopla de Treino", preco:89.9, cat:"Equipamentos"}
+				];
+
+			let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
+			let categoriaAtual = "Todos";
+
+			function salvar(){localStorage.setItem("carrinho",JSON.stringify(carrinho));}
+			function formatar(v){return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});} 
+
+			function render(){
+				  const div=document.getElementById("produtos");
+				  div.innerHTML="";
+
+				  let lista=produtos.filter(p=>
+					      (categoriaAtual=="Todos" || p.cat==categoriaAtual) &&
+					      p.nome.toLowerCase().includes(busca.value.toLowerCase())
+					    );
+
+				  lista.forEach(p=>{
+					      const c=document.createElement("div");
+					      c.className="bg-white p-3 rounded shadow hover:shadow-lg";
+
+					      c.innerHTML=`
+					            <h3 class="font-bold text-sm">${p.nome}</h3>
+						          <p class="text-green-600">${formatar(p.preco)}</p>
+							        <button class="bg-red-500 text-white w-full mt-2 rounded">Adicionar</button>`;
+
+					      c.querySelector("button").onclick=()=>addCarrinho(p);
+					      div.appendChild(c);
+					    });
+			}
+
+			function addCarrinho(p){
+				  const item=carrinho.find(i=>i.nome===p.nome);
+				  if(item)item.qtd++;
+				  else carrinho.push({...p,qtd:1});
+				  salvar(); atualizar();
+			}
+
+			function atualizar(){
+				  const ul=document.getElementById("carrinho");
+				  const totalEl=document.getElementById("total");
+				  ul.innerHTML="";
+				  let total=0;
+
+				  carrinho.forEach((i,idx)=>{
+					      total+=i.preco*i.qtd;
+
+					      const li=document.createElement("li");
+					      li.className="mb-2 border-b pb-2";
+					      li.innerHTML=`
+					            <div class="flex justify-between">
+						            <span>${i.nome}</span>
+							            <span>${formatar(i.preco*i.qtd)}</span>
+								          </div>
+									        <div class="flex gap-2 mt-1">
+										        <button class="bg-gray-300 px-2">-</button>
+											        <span>${i.qtd}</span>
+												        <button class="bg-gray-300 px-2">+</button>
+													      </div>`;
+
+					      const btns=li.querySelectorAll("button");
+					      btns[0].onclick=()=>{i.qtd--; if(i.qtd<=0)carrinho.splice(idx,1); salvar(); atualizar();};
+					      btns[1].onclick=()=>{i.qtd++; salvar(); atualizar();};
+
+					      ul.appendChild(li);
+					    });
+
+				  totalEl.innerText="Total: "+formatar(total);
+			}
+
+			function toggleCarrinho(){
+				  document.getElementById("carrinhoBox").classList.toggle("translate-x-full");
+			}
+
+			// EVENTOS
+			busca.oninput=render;
+
+			document.querySelectorAll(".categoria").forEach(btn=>{
+				  btn.onclick=()=>{
+					      categoriaAtual=btn.innerText;
+					      document.querySelectorAll(".categoria").forEach(b=>b.classList.remove("bg-red-500","text-white"));
+					      btn.classList.add("bg-red-500","text-white");
+					      render();
+					    };
+			});
+
+			finalizar.onclick=()=>{
+				  if(!carrinho.length)return alert("Carrinho vazio");
+				  alert("Compra finalizada!\n"+document.getElementById("total").innerText);
+				  carrinho=[]; salvar(); atualizar();
+			};
+
+			render(); atualizar();
+		</script>
+
+	</body>
+</html>
