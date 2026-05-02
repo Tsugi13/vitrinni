@@ -164,6 +164,31 @@ body {
     border-color: #E2D9CE;
 }
 
+.carrinho-icon {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    padding: 0.55rem 0.9rem 0.55rem 1rem;
+    border-radius: 60px;
+    cursor: pointer;
+    font-weight: 600;
+    color: #332211;
+    transition: background 0.2s;
+    border: 1px solid transparent;
+    text-decoration: none;
+}
+
+.carrinho-icon span {
+    font-size: 0.95rem;
+    letter-spacing: -0.2px;
+}
+
+.carrinho-icon:hover {
+    background: #F6F3EE;
+    border-color: #E2D9CE;
+}
+
 .login-link {
     display: flex;
     align-items: center;
