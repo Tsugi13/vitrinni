@@ -17,7 +17,7 @@ STORES_DB = "stores.db"
 
 
 # ──────────────────────────────────────────────
-# HELPERS
+# Funções QoL (Quality of Life)
 # ──────────────────────────────────────────────
 
 def _hash_password(password: str) -> str:
@@ -39,14 +39,12 @@ def _is_valid_email(email: str) -> bool:
 
 def _get_conn(db_path: str) -> sqlite3.Connection:
     conn = sqlite3.connect(db_path)
-    conn.row_factory = sqlite3.Row          # lets us access columns by name
-    conn.execute("PRAGMA journal_mode=WAL") # safer concurrent writes
+    conn.row_factory = sqlite3.Row          # Acesso de colunas por nome
+    conn.execute("PRAGMA journal_mode=WAL") # Escritas concorrentes sem travar leitura
     return conn
 
 
-# ──────────────────────────────────────────────
-# DATABASE INITIALISATION
-# ──────────────────────────────────────────────
+# Inicialização dos BDs
 
 def init_users_db():
     """
@@ -138,9 +136,7 @@ def init_stores_db():
         conn.commit()
 
 
-# ──────────────────────────────────────────────
-# USER  –  SIGN-UP & LOGIN
-# ──────────────────────────────────────────────
+# Cadastro e Login de Usuários
 
 def user_signup(name: str, email: str, phone: str, password: str) -> dict:
     """
@@ -209,83 +205,122 @@ def user_login(email: str, password: str) -> dict:
     }
 
 
-# ──────────────────────────────────────────────
-# STORE  –  SIGN-UP & LOGIN
-# ──────────────────────────────────────────────
+# Popular BDs com lojas e produtos iniciais para teste.
 
-def store_signup(store_name: str, owner_name: str,
-                 phone: str, email: str, password: str) -> dict:
-    """
-    Register a new store account.
-    Products / inventory are NOT required at sign-up.
+def seed_stores():
+    now = datetime.utcnow().isoformat()
 
-    Returns
-    -------
-    {"success": True,  "store_id": <int>}
-    {"success": False, "error":    <str>}
-    """
-    if not all([store_name, owner_name, phone, email, password]):
-        return {"success": False, "error": "All fields are required."}
-    if not _is_valid_email(email):
-        return {"success": False, "error": "Invalid e-mail format."}
-    if len(password) < 6:
-        return {"success": False, "error": "Password must be at least 6 characters."}
-
-    hashed = _hash_password(password)
-    now    = datetime.utcnow().isoformat()
-
-    try:
-        with _get_conn(STORES_DB) as conn:
-            cursor = conn.execute(
-                "INSERT INTO stores (store_name, owner_name, phone, email, password, created_at) "
-                "VALUES (?, ?, ?, ?, ?, ?)",
-                (store_name.strip(), owner_name.strip(),
-                 phone.strip(), email.lower().strip(), hashed, now)
-            )
-            conn.commit()
-            return {"success": True, "store_id": cursor.lastrowid}
-
-    except sqlite3.IntegrityError:
-        return {"success": False, "error": "E-mail already registered."}
-    except Exception as e:
-        return {"success": False, "error": f"Database error: {e}"}
-
-
-def store_login(email: str, password: str) -> dict:
-    """
-    Authenticate a store owner.
-
-    Returns
-    -------
-    {"success": True,  "store": {"id", "store_name", "owner_name", "email", "phone"}}
-    {"success": False, "error": <str>}
-    """
-    if not email or not password:
-        return {"success": False, "error": "E-mail and password are required."}
+    stores = [
+        {
+            "store_name": "Kimono King",
+            "owner_name": "Rafael Mendes",
+            "phone": "11 91234-5678",
+            "email": "contato@kimonoking.com.br",
+            "password": _hash_password("kimono123"),
+            "products": [
+                ("Kimono Adulto A2 – Branco",  "Tecido 100% algodão pré-encolhido. Aprovado IBJJF.",        249.90, 30),
+                ("Kimono Infantil M1 – Azul",  "Leve e durável para crianças de 6-10 anos.",                189.90, 20),
+                ("Faixa Branca Bordada",        "Algodão resistente, 2,5 m, ideal para iniciantes.",          39.90, 50),
+                ("Faixa Preta Bordada",         "Acabamento premium, bordado personalizado disponível.",       89.90, 15),
+                ("Rashguard Manga Longa",        "Compressão suave, proteção contra abrasão no tatame.",       119.90, 25),
+                ("Protetor Bucal Duplo",         "Silicone atóxico moldável, proteção para dentes e gengivas.", 29.90, 60),
+            ]
+        },
+        {
+            "store_name": "Muay Store",
+            "owner_name": "Wanderlei Costa",
+            "phone": "21 98765-4321",
+            "email": "muaystore@luta.com.br",
+            "password": _hash_password("muay123"),
+            "products": [
+                ("Luva de Boxe Pro 12oz",       "Couro sintético premium, espuma de alta densidade.",        149.90, 40),
+                ("Luva de Boxe Pro 16oz",       "Ideal para sparring pesado e treinos com parceiro.",        179.90, 25),
+                ("Capacete Muay Thai",          "Cobertura total de orelhas, ventilação aprimorada.",        209.90, 18),
+                ("Caneleira Gel Pro",            "Proteção de gel absorvente, fechamento em velcro.",         189.90, 22),
+                ("Bandagem Elástica 5m",         "Proteção extra para punhos e articulações, par incluso.",    34.90, 80),
+                ("Shorts Muay Thai Tiger",       "Tecido acetinado, elástico na cintura, corte tailandês.",    99.90, 35),
+                ("Saco de Pancada 40kg",         "Couro ecológico, recheio de areia e espuma.",               499.90,  8),
+            ]
+        },
+        {
+            "store_name": "Tatame Total",
+            "owner_name": "Fernanda Yamamoto",
+            "phone": "31 97654-3210",
+            "email": "contato@tatametotal.com.br",
+            "password": _hash_password("tatame123"),
+            "products": [
+                ("Tatame EVA 1m x 1m – 20mm",  "Alta densidade, encaixe perfeito, superfície antiderrapante.", 59.90, 100),
+                ("Tatame EVA 1m x 1m – 40mm",  "Versão premium para quedas e arremessos pesados.",             89.90,  60),
+                ("Cronômetro Digital Tatame",   "Display LED, modos luta/descanso, buzzer integrado.",          99.90,  12),
+                ("Manequim de Treino 1,70m",    "Borracha sólida, base estabilizadora, 43 kg.",               799.90,   5),
+                ("Kit Defesa Pessoal – Bastões","Par de bastões de polipropileno, cabo emborrachado.",           49.90,  30),
+                ("Espelho Treinamento 2x1m",    "Vidro temperado com moldura de alumínio.",                   299.90,   7),
+            ]
+        },
+        {
+            "store_name": "Dragon Fight Shop",
+            "owner_name": "Carlos Dragão",
+            "phone": "41 96543-2109",
+            "email": "dragon@fightshop.com.br",
+            "password": _hash_password("dragon123"),
+            "products": [
+                ("Uniforme Taekwondo Dobok",     "Tecido leve sanfonado, ideal para chutes altos.",            159.90, 28),
+                ("Protetor de Canela TKD",       "Espuma moldada, cobertura de tornozelo, adulto.",             69.90, 40),
+                ("Protetor de Antebraço",         "Par, espuma EVA 15mm, fechamento ajustável.",                54.90, 35),
+                ("Colete de Pontuação Eletrônico","Homologado WT, sensor de impacto integrado.",               599.90,  6),
+                ("Faixa Poomsae – Todas as cores","Poliéster resistente, costura dupla, 2,8m.",                29.90, 70),
+                ("Luva Sparring Taekwondo",       "Proteção mão inteira, velcro de ajuste, par.",               79.90, 20),
+            ]
+        },
+        {
+            "store_name": "Judô & Cia",
+            "owner_name": "Mariana Nakamura",
+            "phone": "51 95432-1098",
+            "email": "judoecia@dojo.com.br",
+            "password": _hash_password("judo123"),
+            "products": [
+                ("Judogi Adulto 750g/m²",       "Algodão reforçado, homologado IJF, branco.",                 329.90, 20),
+                ("Judogi Infantil 450g/m²",     "Leve e flexível para crianças, azul ou branco.",             199.90, 18),
+                ("Faixa Judô – todas as cores", "Algodão torcido, 2,6m, resistente a lavagens.",               35.90, 60),
+                ("Joelheira Neoprene",           "Compressão uniforme, abertura patelar, par.",                 59.90, 45),
+                ("Luva de Proteção Kata",        "Espuma 10mm, sem dedos, par.",                               44.90, 30),
+                ("Bolsa de Judô GI Bag",         "Compartimentos separados para kimono molhado/seco.",          89.90, 14),
+            ]
+        },
+    ]
 
     with _get_conn(STORES_DB) as conn:
-        row = conn.execute(
-            "SELECT * FROM stores WHERE email = ?", (email.lower().strip(),)
-        ).fetchone()
+        existing = conn.execute("SELECT COUNT(*) FROM stores").fetchone()[0]
+        if existing > 0:
+            return  # already seeded
 
-    if not row or not _verify_password(password, row["password"]):
-        return {"success": False, "error": "Invalid e-mail or password."}
+        for s in stores:
+            cur = conn.execute(
+                "INSERT INTO stores (store_name, owner_name, phone, email, password, created_at) "
+                "VALUES (?, ?, ?, ?, ?, ?)",
+                (s["store_name"], s["owner_name"], s["phone"],
+                 s["email"], s["password"], now)
+            )
+            store_id = cur.lastrowid
 
-    return {
-        "success": True,
-        "store": {
-            "id":         row["id"],
-            "store_name": row["store_name"],
-            "owner_name": row["owner_name"],
-            "email":      row["email"],
-            "phone":      row["phone"],
-        }
-    }
+            for (pname, pdesc, pprice, pqty) in s["products"]:
+                pcur = conn.execute(
+                    "INSERT INTO products (store_id, name, description, price, created_at) "
+                    "VALUES (?, ?, ?, ?, ?)",
+                    (store_id, pname, pdesc, pprice, now)
+                )
+                product_id = pcur.lastrowid
+                conn.execute(
+                    "INSERT INTO inventory (product_id, store_id, quantity, updated_at) "
+                    "VALUES (?, ?, ?, ?)",
+                    (product_id, store_id, pqty, now)
+                )
+
+        conn.commit()
+        print(f"[seed] {len(stores)} stores and their products inserted.")
 
 
-# ──────────────────────────────────────────────
-# STORES  –  SEARCH BY NAME
-# ──────────────────────────────────────────────
+# Pesquisar lojas por nome
 
 def search_stores(name: str) -> dict:
     """
@@ -308,121 +343,6 @@ def search_stores(name: str) -> dict:
             ).fetchall()
 
         return {"success": True, "stores": [dict(r) for r in rows]}
-
-    except Exception as e:
-        return {"success": False, "error": f"Database error: {e}"}
-
-
-# ──────────────────────────────────────────────
-# PRODUCTS  –  ADD / LIST
-# ──────────────────────────────────────────────
-
-def add_product(store_id: int, name: str,
-                description: str = "", price: float = 0.0,
-                initial_quantity: int = 0) -> dict:
-    """
-    Add a product to a store and create its inventory entry.
-
-    Returns
-    -------
-    {"success": True,  "product_id": <int>}
-    {"success": False, "error":      <str>}
-    """
-    if not name:
-        return {"success": False, "error": "Product name is required."}
-    if price < 0:
-        return {"success": False, "error": "Price cannot be negative."}
-
-    now = datetime.utcnow().isoformat()
-
-    try:
-        with _get_conn(STORES_DB) as conn:
-            # verify store exists
-            store = conn.execute(
-                "SELECT id FROM stores WHERE id = ?", (store_id,)
-            ).fetchone()
-            if not store:
-                return {"success": False, "error": "Store not found."}
-
-            cursor = conn.execute(
-                "INSERT INTO products (store_id, name, description, price, created_at) "
-                "VALUES (?, ?, ?, ?, ?)",
-                (store_id, name.strip(), description.strip(), price, now)
-            )
-            product_id = cursor.lastrowid
-
-            conn.execute(
-                "INSERT INTO inventory (product_id, store_id, quantity, updated_at) "
-                "VALUES (?, ?, ?, ?)",
-                (product_id, store_id, initial_quantity, now)
-            )
-            conn.commit()
-            return {"success": True, "product_id": product_id}
-
-    except Exception as e:
-        return {"success": False, "error": f"Database error: {e}"}
-
-
-def list_products(store_id: int) -> dict:
-    """
-    Return all products with their current inventory for a given store.
-
-    Returns
-    -------
-    {"success": True,  "products": [...]}
-    {"success": False, "error":    <str>}
-    """
-    try:
-        with _get_conn(STORES_DB) as conn:
-            rows = conn.execute("""
-                SELECT p.id, p.name, p.description, p.price,
-                       COALESCE(i.quantity, 0) AS quantity
-                FROM   products  p
-                LEFT JOIN inventory i
-                       ON i.product_id = p.id AND i.store_id = p.store_id
-                WHERE  p.store_id = ?
-                ORDER  BY p.name
-            """, (store_id,)).fetchall()
-
-        return {
-            "success": True,
-            "products": [dict(r) for r in rows]
-        }
-    except Exception as e:
-        return {"success": False, "error": f"Database error: {e}"}
-
-
-# ──────────────────────────────────────────────
-# INVENTORY  –  UPDATE
-# ──────────────────────────────────────────────
-
-def update_inventory(store_id: int, product_id: int, quantity: int) -> dict:
-    """
-    Set the stock quantity for a product belonging to a store.
-
-    Returns
-    -------
-    {"success": True}
-    {"success": False, "error": <str>}
-    """
-    if quantity < 0:
-        return {"success": False, "error": "Quantity cannot be negative."}
-
-    now = datetime.utcnow().isoformat()
-
-    try:
-        with _get_conn(STORES_DB) as conn:
-            result = conn.execute(
-                "UPDATE inventory SET quantity = ?, updated_at = ? "
-                "WHERE product_id = ? AND store_id = ?",
-                (quantity, now, product_id, store_id)
-            )
-            conn.commit()
-
-            if result.rowcount == 0:
-                return {"success": False, "error": "Inventory record not found. "
-                                                    "Make sure the product belongs to this store."}
-            return {"success": True}
 
     except Exception as e:
         return {"success": False, "error": f"Database error: {e}"}

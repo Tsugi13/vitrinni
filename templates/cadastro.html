@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Vitrinni · Cadastro</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='cadastro.css') }}">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="nav-container">
+
+            <div class="brand-area">
+                <a href="main.html" class="logo">
+                    <img src="https://i.gyazo.com/fad9d8fb6ce81b4a456139e5c56d25f7.png" alt="Vitrinni" class="logo-img">
+                </a>
+            </div>
+
+            <div class="nav-actions">
+
+                <div class="search-wrapper">
+                    <input type="text" class="search-input" placeholder="Buscar arte marcial, academia, produto..." aria-label="Campo de pesquisa">
+                    <button class="search-btn" aria-label="Buscar">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+
+                <div class="language-selector">
+                    <i class="fas fa-globe-americas"></i>
+                    <span>PT · BR</span>
+                </div>
+
+                <div class="menu-section">
+
+                    <a href="login.html" class="login-link" aria-label="Fazer login">
+                        <i class="fas fa-user-circle"></i>
+                        <span>Fazer login</span>
+                    </a>
+
+                    <div class="menu-icon">
+                        <i class="fas fa-bars"></i>
+                        <span>Menu</span>
+                    </div>
+
+                    <div class="carrinho-icon">
+                        <i class="fa-solid fa-cart-arrow-down"></i>
+                        <span>Carrinho</span>
+                    </div>
+
+                </div>
+
+            </div>
+        </div>
+    </nav>
+
+    <div class="wrapper">
+        <form id="cadastroForm">
+            <h1>Cadastre-se</h1>
+            <div id="cadastroError" class="form-error" style="display:none;"></div>
+            <div id="cadastroSuccess" class="form-success" style="display:none;"></div>
+
+            <div class="input-box">
+                <input type="text" id="cadName" placeholder="Nome completo" required>
+                <i class="fa-solid fa-user"></i>
+            </div>
+
+            <div class="input-box">
+                <input type="text" id="cadPhone" placeholder="Telefone" required>
+                <i class="fa-solid fa-phone"></i>
+            </div>
+
+            <div class="input-box">
+                <input type="email" id="cadEmail" placeholder="E-mail" required>
+                <i class="fa-solid fa-at"></i>
+            </div>
+
+            <div class="input-box">
+                <input type="password" id="cadPassword" placeholder="Senha" required>
+                <i class="fa-solid fa-lock"></i>
+            </div>
+
+            <div class="input-box">
+                <input type="password" id="cadConfirm" placeholder="Confirmar senha" required>
+                <i class="fa-solid fa-lock"></i>
+            </div>
+
+            <div class="remember-forgot">
+                <label><input type="checkbox"> Lembrar dessa conta</label>
+            </div>
+
+            <button type="submit" class="cadastro-btn" id="cadastroBtn">Criar Conta</button>
+
+            <div class="entrar-link">
+                <p>Já tem uma conta? <a href="/login.html">Faça Login</a></p>
+            </div>
+        </form>
+    </div>
+
+    <style>
+        .form-error {
+            background: #fee2e2; color: #b91c1c;
+            border: 1px solid #fca5a5; border-radius: 8px;
+            padding: 10px 16px; font-size: 14px;
+            margin-bottom: 10px; text-align: center;
+        }
+        .form-success {
+            background: #dcfce7; color: #166534;
+            border: 1px solid #86efac; border-radius: 8px;
+            padding: 10px 16px; font-size: 14px;
+            margin-bottom: 10px; text-align: center;
+        }
+        .cadastro-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+    </style>
+
+    <script>
+        document.getElementById('cadastroForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('cadastroBtn');
+            const errBox = document.getElementById('cadastroError');
+            const okBox  = document.getElementById('cadastroSuccess');
+
+            const name     = document.getElementById('cadName').value.trim();
+            const phone    = document.getElementById('cadPhone').value.trim();
+            const email    = document.getElementById('cadEmail').value.trim();
+            const password = document.getElementById('cadPassword').value;
+            const confirm  = document.getElementById('cadConfirm').value;
+
+            errBox.style.display = 'none';
+            okBox.style.display  = 'none';
+
+            if (password !== confirm) {
+                errBox.textContent = 'As senhas não coincidem.';
+                errBox.style.display = 'block';
+                return;
+            }
+            if (password.length < 6) {
+                errBox.textContent = 'A senha deve ter no mínimo 6 caracteres.';
+                errBox.style.display = 'block';
+                return;
+            }
+
+            btn.disabled = true;
+            btn.textContent = 'Criando conta...';
+
+            try {
+                const res = await fetch('/api/signup', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, phone, email, password })
+                });
+                const data = await res.json();
+
+                if (data.success) {
+                    okBox.textContent = 'Conta criada com sucesso! Redirecionando...';
+                    okBox.style.display = 'block';
+                    setTimeout(() => { window.location.href = '/'; }, 1200);
+                } else {
+                    errBox.textContent = data.error || 'Erro ao criar conta.';
+                    errBox.style.display = 'block';
+                    btn.disabled = false;
+                    btn.textContent = 'Criar Conta';
+                }
+            } catch (err) {
+                errBox.textContent = 'Erro de conexão. Tente novamente.';
+                errBox.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Criar Conta';
+            }
+        });
+    </script>
+</body>
+</html>
