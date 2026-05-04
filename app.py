@@ -96,7 +96,7 @@ def api_products():
 
 @app.route("/loja.html")
 def loja_page():
-    return render_template("pagina_de_compras.html", user=session.get("user"))
+    return render_template("loja.html", user=session.get("user"))
 
 
 @app.route("/finalizar.html")
