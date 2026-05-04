@@ -86,6 +86,24 @@ def api_session():
     return jsonify({"user": session.get("user")})
 
 
+@app.route("/api/products")
+def api_products():
+    """Return all products with their store name, price and stock."""
+    from functions import list_all_products
+    result = list_all_products()
+    return jsonify(result)
+
+
+@app.route("/loja.html")
+def loja_page():
+    return render_template("pagina_de_compras.html", user=session.get("user"))
+
+
+@app.route("/finalizar.html")
+def finalizar_page():
+    return render_template("finalizar.html", user=session.get("user"))
+
+
 # Inicialização do site
 
 if __name__ == "__main__":

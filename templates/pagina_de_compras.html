@@ -1,349 +1,541 @@
-<<<<<<< HEAD
 <!DOCTYPE html>
-<html lang="pt-br">
-	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>Vitrinni</title>
-		<script src="https://cdn.tailwindcss.com"></script>
-	</head>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vitrinni · Loja</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+    <style>
+        /* ── menu do usuário ── */
+        .user-menu { display: flex; align-items: center; gap: 4px; }
+        .login-link.logged-in { background: #f0faf0; border-color: #b2dfdb; color: #1b5e20; cursor: default; }
+        .logout-link {
+            display: flex; align-items: center; justify-content: center;
+            width: 34px; height: 34px; border-radius: 50%;
+            color: #666; font-size: 0.9rem;
+            transition: background 0.2s, color 0.2s; text-decoration: none;
+        }
+        .logout-link:hover { background: #fee2e2; color: #b91c1c; }
 
-	<body class="bg-gray-100 font-sans">
+        /* ── layout ── */
+        .shop-layout {
+            max-width: 1300px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+            display: grid;
+            grid-template-columns: 1fr 340px;
+            gap: 2rem;
+            align-items: start;
+        }
 
-		<!-- HEADER -->
-		<header class="bg-red-600 text-white p-3 flex flex-col md:flex-row items-center gap-2">
-			  <h1 class="text-lg md:text-xl font-bold">Vitrinni 🥊</h1>
-			    <input id="busca" placeholder="Buscar produtos..." 
-					        class="p-2 rounded text-black w-full md:w-1/2">
-		</header>
+        /* ── cabeçalho da página ── */
+        .shop-header { margin-bottom: 1.5rem; }
+        .shop-header h1 { font-size: 2rem; font-weight: 800; color: #1a1a1a; margin-bottom: 0.4rem; }
+        .shop-header p {
+            color: #4a3b2c; font-size: 1rem; font-weight: 500;
+            border-left: 5px solid #F9A825; padding-left: 1rem;
+        }
 
-		<!-- CATEGORIAS -->
-		<div class="flex overflow-x-auto gap-2 p-3 bg-white shadow">
-			  <button class="categoria bg-red-500 text-white px-3 py-1 rounded">Todos</button>
-			    <button class="categoria px-3 py-1 bg-gray-200 rounded">Luva</button>
-			      <button class="categoria px-3 py-1 bg-gray-200 rounded">Kimono</button>
-			        <button class="categoria px-3 py-1 bg-gray-200 rounded">Caneleira</button>
-				  <button class="categoria px-3 py-1 bg-gray-200 rounded">Bandagem</button>
-				    <button class="categoria px-3 py-1 bg-gray-200 rounded">Protetor</button>
-				      <button class="categoria px-3 py-1 bg-gray-200 rounded">Equipamentos</button>
-		</div>
+        /* ── busca e filtros ── */
+        .shop-controls { display: flex; gap: 1rem; margin-bottom: 1.2rem; flex-wrap: wrap; align-items: center; }
+        .shop-search-wrapper {
+            display: flex; align-items: center;
+            background: #F3F3F0; border-radius: 60px;
+            padding: 0.25rem 0.25rem 0.25rem 1rem;
+            border: 1px solid #E5E0D5; transition: all 0.2s; flex: 1; min-width: 180px;
+        }
+        .shop-search-wrapper:focus-within { background: #fff; border-color: #000; box-shadow: 0 0 0 3px rgba(0,0,0,0.08); }
+        .shop-search-input {
+            border: none; background: transparent; padding: 0.5rem 0;
+            font-size: 0.9rem; width: 100%; outline: none;
+            font-family: 'Inter', sans-serif; color: #2c221b;
+        }
+        .shop-search-input::placeholder { color: #8f7e6b; }
+        .shop-search-btn {
+            background: #000; border: none; color: white;
+            border-radius: 60px; width: 34px; height: 34px;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.2s; margin-left: 6px; flex-shrink: 0;
+        }
+        .shop-search-btn:hover { background: #333; }
 
-		<!-- PRODUTOS -->
-		<div id="produtos" class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4"></div>
+        .filter-chips { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+        .chip {
+            padding: 0.4rem 1rem; border-radius: 60px; font-size: 0.8rem;
+            font-weight: 600; cursor: pointer; border: 1px solid #E5E0D5;
+            background: #F3F3F0; color: #332211; transition: all 0.18s; white-space: nowrap;
+        }
+        .chip:hover { border-color: #aaa; background: #eae6df; }
+        .chip.active { background: #000; color: #fff; border-color: #000; }
 
-		<!-- BOTÃO CARRINHO MOBILE -->
-		<button onclick="toggleCarrinho()" 
-			class="fixed bottom-4 right-4 bg-red-600 text-white p-4 rounded-full shadow-lg md:hidden">
-			🛒
-		</button>
+        /* ── grade de produtos ── */
+        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1.4rem; }
 
-		<!-- CARRINHO -->
-		<div id="carrinhoBox" class="fixed right-0 top-0 w-full md:w-80 h-full bg-white shadow-lg p-4 overflow-auto translate-x-full md:translate-x-0 transition">
-			  <h2 class="font-bold mb-2">🛒 Carrinho</h2>
-			    <ul id="carrinho"></ul>
-			      <p id="total" class="font-bold mt-2"></p>
-			        <button id="finalizar" class="bg-green-600 text-white w-full p-2 mt-2 rounded">Finalizar Compra</button>
-		</div>
+        .prod-card {
+            background: white; border-radius: 20px; border: 1px solid #efe4d8;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.02); overflow: hidden;
+            display: flex; flex-direction: column; transition: all 0.22s;
+        }
+        .prod-card:hover { transform: translateY(-5px); box-shadow: 0 18px 28px -10px rgba(0,0,0,0.13); }
+        .prod-card-img {
+            height: 160px; background: linear-gradient(135deg, #2c2c2c, #1a1a1a);
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .prod-card-img i { font-size: 3rem; color: #F9A825; }
+        .prod-card-body { padding: 0.8rem; display: flex; flex-direction: column; flex: 1; }
+        .prod-store-tag {
+            font-size: 0.7rem; font-weight: 700; text-transform: uppercase;
+            letter-spacing: 0.3px; color: #8b775e; background: #F1EBE3;
+            display: inline-block; padding: 0.15rem 0.6rem; border-radius: 30px;
+            margin-bottom: 0.4rem; width: fit-content;
+        }
+        .prod-name { font-size: 0.95rem; font-weight: 700; color: #1a1a1a; margin-bottom: 0.25rem; line-height: 1.3; }
+        .prod-desc { font-size: 0.75rem; color: #7a6550; margin-bottom: 0.5rem; line-height: 1.4; flex: 1; }
+        .prod-footer { display: flex; align-items: center; justify-content: space-between; margin-top: auto; gap: 0.5rem; }
+        .prod-price { font-weight: 800; font-size: 1rem; color: #000; }
+        .prod-stock-zero { color: #aaa; font-size: 0.72rem; font-weight: 600; }
 
-		<script>
-			const produtos = [
-				  // LUVAS
-				  {nome:"Luva Everlast", preco:199.9, cat:"Luva"},
-				  {nome:"Luva Adidas", preco:229.9, cat:"Luva"},
-				  {nome:"Luva Profissional", preco:259.9, cat:"Luva"},
-				  {nome:"Luva Iniciante", preco:149.9, cat:"Luva"},
+        .btn-add {
+            background: #000; color: white; border: none;
+            padding: 0.45rem 0.9rem; border-radius: 40px;
+            font-size: 0.78rem; font-weight: 700; cursor: pointer;
+            transition: 0.18s; white-space: nowrap;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .btn-add:hover { background: #333; }
+        .btn-add.added { background: #2e7d32; }
 
-				  // KIMONOS
-				  {nome:"Kimono Branco", preco:349.9, cat:"Kimono"},
-				  {nome:"Kimono Azul", preco:369.9, cat:"Kimono"},
-				  {nome:"Kimono Preto", preco:389.9, cat:"Kimono"},
+        /* ── states ── */
+        .state-msg { grid-column: 1/-1; text-align: center; padding: 4rem 2rem; color: #8b775e; }
+        .state-msg i { font-size: 3rem; margin-bottom: 1rem; display: block; }
+        .state-msg p { font-size: 1rem; font-weight: 500; }
 
-				  // CANELEIRAS
-				  {nome:"Caneleira Simples", preco:129.9, cat:"Caneleira"},
-				  {nome:"Caneleira Profissional", preco:179.9, cat:"Caneleira"},
+        /* ── cart sidebar ── */
+        .cart-sidebar {
+            background: white; border-radius: 24px; border: 1px solid #efe4d8;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.04); padding: 1.5rem;
+            position: sticky; top: 100px; display: flex; flex-direction: column;
+            max-height: calc(100vh - 130px);
+        }
+        .cart-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.2rem; }
+        .cart-header h2 { font-size: 1.2rem; font-weight: 800; color: #1a1a1a; }
+        .cart-badge { background: #F9A825; color: #2c1c0c; font-size: 0.7rem; font-weight: 800; border-radius: 30px; padding: 0.15rem 0.6rem; }
 
-				  // BANDAGENS
-				  {nome:"Bandagem 3m", preco:29.9, cat:"Bandagem"},
-				  {nome:"Bandagem 5m", preco:39.9, cat:"Bandagem"},
+        .cart-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #b0997f; padding: 2rem 0; text-align: center; }
+        .cart-empty i { font-size: 2.5rem; margin-bottom: 0.8rem; opacity: 0.5; }
+        .cart-empty p { font-size: 0.85rem; }
 
-				  // PROTETORES
-				  {nome:"Protetor Bucal Básico", preco:39.9, cat:"Protetor"},
-				  {nome:"Protetor Bucal Profissional", preco:59.9, cat:"Protetor"},
+        .cart-items { flex: 1; overflow-y: auto; margin-bottom: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+        .cart-items::-webkit-scrollbar { width: 4px; }
+        .cart-items::-webkit-scrollbar-thumb { background: #e0d5c8; border-radius: 4px; }
 
-				  // EQUIPAMENTOS
-				  {nome:"Saco de Pancada 1m", preco:499.9, cat:"Equipamentos"},
-				  {nome:"Saco de Pancada Profissional", preco:699.9, cat:"Equipamentos"},
-				  {nome:"Corda de Pular", preco:49.9, cat:"Equipamentos"},
-				  {nome:"Manopla de Treino", preco:89.9, cat:"Equipamentos"}
-				];
+        .cart-item { display: flex; align-items: flex-start; gap: 0.75rem; padding-bottom: 0.75rem; border-bottom: 1px solid #f0e9e0; }
+        .cart-item:last-child { border-bottom: none; }
+        .cart-item-icon {
+            width: 42px; height: 42px; border-radius: 12px;
+            background: linear-gradient(135deg, #2c2c2c, #1a1a1a);
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        }
+        .cart-item-icon i { color: #F9A825; font-size: 1.1rem; }
+        .cart-item-info { flex: 1; min-width: 0; }
+        .cart-item-name { font-size: 0.82rem; font-weight: 700; color: #1a1a1a; margin-bottom: 0.15rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cart-item-store { font-size: 0.7rem; color: #8b775e; }
+        .cart-item-controls { display: flex; align-items: center; gap: 0.4rem; margin-top: 0.35rem; }
+        .qty-btn {
+            width: 22px; height: 22px; border-radius: 50%; border: 1px solid #ddd;
+            background: #f5f0eb; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+            display: flex; align-items: center; justify-content: center; transition: 0.15s; line-height: 1; color: #333;
+        }
+        .qty-btn:hover { background: #000; color: #fff; border-color: #000; }
+        .qty-val { font-size: 0.82rem; font-weight: 700; min-width: 16px; text-align: center; }
+        .cart-item-price { font-size: 0.85rem; font-weight: 800; color: #000; white-space: nowrap; }
 
-			let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
-			let categoriaAtual = "Todos";
+        .cart-divider { border: none; border-top: 1px solid #f0e9e0; margin: 0.5rem 0; }
+        .cart-total-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+        .cart-total-label { font-size: 0.85rem; color: #6b5a48; font-weight: 600; }
+        .cart-total-val { font-size: 1.3rem; font-weight: 800; color: #000; }
 
-			function salvar(){localStorage.setItem("carrinho",JSON.stringify(carrinho));}
-			function formatar(v){return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});} 
+        .btn-buy {
+            width: 100%; background: #000; color: white; border: none;
+            padding: 0.9rem; border-radius: 40px; font-size: 0.95rem; font-weight: 700;
+            cursor: pointer; transition: 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-buy:hover { background: #222; transform: translateY(-1px); }
+        .btn-clear { width: 100%; background: transparent; color: #999; border: none; padding: 0.5rem; font-size: 0.78rem; cursor: pointer; margin-top: 0.4rem; transition: color 0.2s; }
+        .btn-clear:hover { color: #b91c1c; }
 
-			function render(){
-				  const div=document.getElementById("produtos");
-				  div.innerHTML="";
+        /* ── mobile fab + drawer ── */
+        .cart-fab {
+            display: none; position: fixed; bottom: 1.5rem; right: 1.5rem;
+            background: #000; color: white; border: none; border-radius: 60px;
+            padding: 0.8rem 1.2rem; font-size: 0.9rem; font-weight: 700;
+            cursor: pointer; box-shadow: 0 8px 20px rgba(0,0,0,0.25); z-index: 999;
+            gap: 8px; align-items: center; transition: 0.2s;
+        }
+        .cart-fab:hover { background: #333; }
 
-				  let lista=produtos.filter(p=>
-					      (categoriaAtual=="Todos" || p.cat==categoriaAtual) &&
-					      p.nome.toLowerCase().includes(busca.value.toLowerCase())
-					    );
+        .cart-drawer-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1100; }
+        .cart-drawer-overlay.open { display: block; }
+        .cart-drawer {
+            position: fixed; right: 0; top: 0; bottom: 0; width: min(360px, 100vw);
+            background: white; z-index: 1101; padding: 1.5rem;
+            display: flex; flex-direction: column;
+            transform: translateX(100%); transition: transform 0.3s ease;
+            box-shadow: -8px 0 30px rgba(0,0,0,0.12);
+        }
+        .cart-drawer.open { transform: translateX(0); }
+        .drawer-close { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #555; align-self: flex-end; padding: 0.2rem 0.4rem; line-height: 1; }
 
-				  lista.forEach(p=>{
-					      const c=document.createElement("div");
-					      c.className="bg-white p-3 rounded shadow hover:shadow-lg";
+        @media (max-width: 900px) {
+            .shop-layout { grid-template-columns: 1fr; }
+            .cart-sidebar { display: none; }
+            .cart-fab { display: flex; }
+        }
+        @media (max-width: 480px) {
+            .product-grid { grid-template-columns: repeat(2, 1fr); }
+            .shop-layout { padding: 0 1rem; }
+        }
+    </style>
+</head>
+<body>
 
-					      c.innerHTML=`
-					            <h3 class="font-bold text-sm">${p.nome}</h3>
-						          <p class="text-green-600">${formatar(p.preco)}</p>
-							        <button class="bg-red-500 text-white w-full mt-2 rounded">Adicionar</button>`;
+<!-- ══ NAVBAR ══ -->
+<nav class="navbar">
+    <div class="nav-container">
+        <div class="brand-area">
+            <a href="/" class="logo">
+                <img src="https://i.gyazo.com/fad9d8fb6ce81b4a456139e5c56d25f7.png" alt="Vitrinni" class="logo-img">
+            </a>
+        </div>
+        <div class="nav-actions">
+            <div class="language-selector">
+                <i class="fas fa-globe-americas"></i>
+                <span>PT · BR</span>
+                <i class="fas fa-chevron-down" style="font-size:0.7rem;opacity:0.7;"></i>
+            </div>
+            <div class="search-wrapper">
+                <input type="text" class="search-input" id="navSearch" placeholder="Buscar arte marcial, academia, produto...">
+                <button class="search-btn"><i class="fas fa-search"></i></button>
+            </div>
+            <div class="menu-section">
+                {% if user %}
+                <div class="user-menu">
+                    <a class="login-link logged-in">
+                        <i class="fas fa-user-circle"></i>
+                        <span>{{ user.name.split()[0] }}</span>
+                    </a>
+                    <a href="/logout" class="logout-link" title="Sair">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                </div>
+                {% else %}
+                <a href="/login.html" class="login-link">
+                    <i class="fas fa-user-circle"></i>
+                    <span>Fazer login</span>
+                </a>
+                {% endif %}
+                <div class="menu-icon"><i class="fas fa-bars"></i><span>Menu</span></div>
+                <a href="/loja.html" class="carrinho-icon">
+                    <i class="fa-solid fa-cart-arrow-down"></i>
+                    <span>Carrinho</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
 
-					      c.querySelector("button").onclick=()=>addCarrinho(p);
-					      div.appendChild(c);
-					    });
-			}
+<!-- ══ LAYOUT ══ -->
+<div class="shop-layout">
 
-			function addCarrinho(p){
-				  const item=carrinho.find(i=>i.nome===p.nome);
-				  if(item)item.qtd++;
-				  else carrinho.push({...p,qtd:1});
-				  salvar(); atualizar();
-			}
+    <!-- LEFT: products -->
+    <div class="shop-main">
+        <div class="shop-header">
+            <h1>🥋 Produtos</h1>
+            <p>Tudo que você precisa para treinar, em um só lugar.</p>
+        </div>
 
-			function atualizar(){
-				  const ul=document.getElementById("carrinho");
-				  const totalEl=document.getElementById("total");
-				  ul.innerHTML="";
-				  let total=0;
+        <div class="shop-controls">
+            <div class="shop-search-wrapper">
+                <input type="text" class="shop-search-input" id="shopSearch" placeholder="Buscar produto...">
+                <button class="shop-search-btn"><i class="fas fa-search"></i></button>
+            </div>
+        </div>
 
-				  carrinho.forEach((i,idx)=>{
-					      total+=i.preco*i.qtd;
+        <div class="filter-chips" id="filterChips">
+            <button class="chip active" data-store="all">Todas as lojas</button>
+        </div>
 
-					      const li=document.createElement("li");
-					      li.className="mb-2 border-b pb-2";
-					      li.innerHTML=`
-					            <div class="flex justify-between">
-						            <span>${i.nome}</span>
-							            <span>${formatar(i.preco*i.qtd)}</span>
-								          </div>
-									        <div class="flex gap-2 mt-1">
-										        <button class="bg-gray-300 px-2">-</button>
-											        <span>${i.qtd}</span>
-												        <button class="bg-gray-300 px-2">+</button>
-													      </div>`;
+        <div class="product-grid" id="productGrid">
+            <div class="state-msg">
+                <i class="fas fa-spinner fa-spin"></i>
+                <p>Carregando produtos...</p>
+            </div>
+        </div>
+    </div>
 
-					      const btns=li.querySelectorAll("button");
-					      btns[0].onclick=()=>{i.qtd--; if(i.qtd<=0)carrinho.splice(idx,1); salvar(); atualizar();};
-					      btns[1].onclick=()=>{i.qtd++; salvar(); atualizar();};
+    <!-- RIGHT: cart (desktop) -->
+    <aside class="cart-sidebar">
+        <div class="cart-header">
+            <h2><i class="fas fa-shopping-bag" style="margin-right:6px;"></i>Carrinho</h2>
+            <span class="cart-badge" id="cartBadge">0 itens</span>
+        </div>
+        <div id="cartContent">
+            <div class="cart-empty">
+                <i class="fas fa-cart-arrow-down"></i>
+                <p>Seu carrinho está vazio.<br>Adicione produtos para começar.</p>
+            </div>
+        </div>
+    </aside>
+</div>
 
-					      ul.appendChild(li);
-					    });
+<!-- mobile FAB -->
+<button class="cart-fab" id="cartFab" onclick="openDrawer()">
+    <i class="fas fa-shopping-bag"></i>
+    <span id="fabText">Carrinho (0)</span>
+</button>
 
-				  totalEl.innerText="Total: "+formatar(total);
-			}
+<!-- mobile drawer -->
+<div class="cart-drawer-overlay" id="drawerOverlay" onclick="closeDrawer()"></div>
+<div class="cart-drawer" id="cartDrawer">
+    <button class="drawer-close" onclick="closeDrawer()">✕</button>
+    <div class="cart-header" style="margin-top:0.5rem;">
+        <h2><i class="fas fa-shopping-bag" style="margin-right:6px;"></i>Carrinho</h2>
+        <span class="cart-badge" id="cartBadgeMobile">0 itens</span>
+    </div>
+    <div id="cartContentMobile" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+        <div class="cart-empty">
+            <i class="fas fa-cart-arrow-down"></i>
+            <p>Seu carrinho está vazio.</p>
+        </div>
+    </div>
+</div>
 
-			function toggleCarrinho(){
-				  document.getElementById("carrinhoBox").classList.toggle("translate-x-full");
-			}
+<div style="max-width:1300px;margin:2.5rem auto 0;padding:0 2rem;">
+    <hr>
+    <div class="footer-note">🥊 VITRINNI — Encontre sua academia ideal e os melhores equipamentos para seu treino.</div>
+</div>
 
-			// EVENTOS
-			busca.oninput=render;
+<script>
+// ══ STATE ══
+let allProducts = [];
+let cart = JSON.parse(sessionStorage.getItem('vitrinni_cart') || '[]');
+let activeStore = 'all';
+let searchTerm = '';
 
-			document.querySelectorAll(".categoria").forEach(btn=>{
-				  btn.onclick=()=>{
-					      categoriaAtual=btn.innerText;
-					      document.querySelectorAll(".categoria").forEach(b=>b.classList.remove("bg-red-500","text-white"));
-					      btn.classList.add("bg-red-500","text-white");
-					      render();
-					    };
-			});
+// ══ ICON MAP ══
+const iconMap = [
+    [/luva|boxe|sparring/i,            'fas fa-mitten'],
+    [/kimono|judogi|dobok|uniforme/i,  'fas fa-tshirt'],
+    [/faixa/i,                         'fas fa-ribbon'],
+    [/caneleira/i,                     'fas fa-shoe-prints'],
+    [/capacete/i,                      'fas fa-hard-hat'],
+    [/bandagem/i,                      'fas fa-band-aid'],
+    [/rashguard|shorts/i,              'fas fa-running'],
+    [/tatame|tapete/i,                 'fas fa-border-all'],
+    [/saco.*pancada|saco.*treino/i,    'fas fa-circle'],
+    [/cronômetro|timer/i,              'fas fa-stopwatch'],
+    [/manequim/i,                      'fas fa-male'],
+    [/espelho/i,                       'fas fa-expand-arrows-alt'],
+    [/bastão/i,                        'fas fa-baseball-bat-ball'],
+    [/protetor.*bucal/i,               'fas fa-tooth'],
+    [/protetor|joelheira/i,            'fas fa-shield-alt'],
+    [/bolsa|bag/i,                     'fas fa-shopping-bag'],
+    [/colete/i,                        'fas fa-vest'],
+];
+function getIcon(name) {
+    for (const [re, icon] of iconMap) if (re.test(name)) return icon;
+    return 'fas fa-fist-raised';
+}
 
-			finalizar.onclick=()=>{
-				  if(!carrinho.length)return alert("Carrinho vazio");
-				  alert("Compra finalizada!\n"+document.getElementById("total").innerText);
-				  carrinho=[]; salvar(); atualizar();
-			};
+function fmt(val) {
+    return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
 
-			render(); atualizar();
-		</script>
+// ══ LOAD PRODUCTS ══
+async function loadProducts() {
+    try {
+        const res = await fetch('/api/products');
+        const data = await res.json();
+        if (!data.success) throw new Error(data.error);
+        allProducts = data.products;
+        buildStoreChips();
+        renderProducts();
+    } catch (e) {
+        document.getElementById('productGrid').innerHTML = `
+            <div class="state-msg">
+                <i class="fas fa-exclamation-circle"></i>
+                <p>Erro ao carregar produtos. Tente recarregar a página.</p>
+            </div>`;
+    }
+}
 
-	</body>
+function buildStoreChips() {
+    const stores = [...new Set(allProducts.map(p => p.store_name))].sort();
+    const container = document.getElementById('filterChips');
+    stores.forEach(store => {
+        const btn = document.createElement('button');
+        btn.className = 'chip';
+        btn.dataset.store = store;
+        btn.textContent = store;
+        btn.onclick = () => setStore(store);
+        container.appendChild(btn);
+    });
+}
+
+function setStore(store) {
+    activeStore = store;
+    document.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c.dataset.store === store));
+    renderProducts();
+}
+
+function renderProducts() {
+    const grid = document.getElementById('productGrid');
+    const term = searchTerm.toLowerCase();
+    const filtered = allProducts.filter(p => {
+        const matchStore = activeStore === 'all' || p.store_name === activeStore;
+        const matchSearch = !term || p.name.toLowerCase().includes(term) || p.description.toLowerCase().includes(term) || p.store_name.toLowerCase().includes(term);
+        return matchStore && matchSearch;
+    });
+
+    if (!filtered.length) {
+        grid.innerHTML = `<div class="state-msg"><i class="fas fa-search"></i><p>Nenhum produto encontrado.</p></div>`;
+        return;
+    }
+
+    grid.innerHTML = filtered.map(p => {
+        const icon = getIcon(p.name);
+        const outOfStock = p.quantity === 0;
+        return `
+        <div class="prod-card">
+            <div class="prod-card-img"><i class="${icon}"></i></div>
+            <div class="prod-card-body">
+                <span class="prod-store-tag">${p.store_name}</span>
+                <div class="prod-name">${p.name}</div>
+                <div class="prod-desc">${p.description || '—'}</div>
+                <div class="prod-footer">
+                    <div class="prod-price">${fmt(p.price)}</div>
+                    ${outOfStock
+                        ? `<span class="prod-stock-zero">Esgotado</span>`
+                        : `<button class="btn-add" id="btn-${p.id}" onclick="addToCart(${p.id})">
+                               <i class="fas fa-plus"></i> Adicionar
+                           </button>`
+                    }
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+// ══ CART ══
+function saveCart() { sessionStorage.setItem('vitrinni_cart', JSON.stringify(cart)); }
+
+function addToCart(productId) {
+    const product = allProducts.find(p => p.id === productId);
+    if (!product) return;
+    const existing = cart.find(i => i.id === productId);
+    if (existing) existing.qty++;
+    else cart.push({ id: product.id, name: product.name, store_name: product.store_name, price: product.price, qty: 1 });
+    saveCart();
+    renderCart();
+    // flash button
+    const btn = document.getElementById(`btn-${productId}`);
+    if (btn) {
+        btn.innerHTML = '<i class="fas fa-check"></i> Adicionado';
+        btn.classList.add('added');
+        setTimeout(() => { btn.innerHTML = '<i class="fas fa-plus"></i> Adicionar'; btn.classList.remove('added'); }, 900);
+    }
+}
+
+function changeQty(productId, delta) {
+    const item = cart.find(i => i.id === productId);
+    if (!item) return;
+    item.qty += delta;
+    if (item.qty <= 0) cart = cart.filter(i => i.id !== productId);
+    saveCart();
+    renderCart();
+}
+
+function clearCart() { cart = []; saveCart(); renderCart(); }
+
+function cartInnerHTML() {
+    if (!cart.length) {
+        return `<div class="cart-empty">
+            <i class="fas fa-cart-arrow-down"></i>
+            <p>Seu carrinho está vazio.<br>Adicione produtos para começar.</p>
+        </div>`;
+    }
+    const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+    const items = cart.map(i => `
+        <div class="cart-item">
+            <div class="cart-item-icon"><i class="${getIcon(i.name)}"></i></div>
+            <div class="cart-item-info">
+                <div class="cart-item-name">${i.name}</div>
+                <div class="cart-item-store">${i.store_name}</div>
+                <div class="cart-item-controls">
+                    <button class="qty-btn" onclick="changeQty(${i.id}, -1)">−</button>
+                    <span class="qty-val">${i.qty}</span>
+                    <button class="qty-btn" onclick="changeQty(${i.id}, 1)">+</button>
+                </div>
+            </div>
+            <div class="cart-item-price">${fmt(i.price * i.qty)}</div>
+        </div>`).join('');
+
+    return `
+        <div class="cart-items">${items}</div>
+        <hr class="cart-divider">
+        <div class="cart-total-row">
+            <span class="cart-total-label">Total</span>
+            <span class="cart-total-val">${fmt(total)}</span>
+        </div>
+        <button class="btn-buy" onclick="goToCheckout()">
+            <i class="fas fa-bolt"></i> Finalizar Compra
+        </button>
+        <button class="btn-clear" onclick="clearCart()">Limpar carrinho</button>`;
+}
+
+function renderCart() {
+    const totalItems = cart.reduce((s, i) => s + i.qty, 0);
+    const html = cartInnerHTML();
+    document.getElementById('cartContent').innerHTML = html;
+    document.getElementById('cartContentMobile').innerHTML = html;
+    document.getElementById('cartBadge').textContent = `${totalItems} ${totalItems === 1 ? 'item' : 'itens'}`;
+    document.getElementById('cartBadgeMobile').textContent = `${totalItems} ${totalItems === 1 ? 'item' : 'itens'}`;
+    document.getElementById('fabText').textContent = `Carrinho (${totalItems})`;
+}
+
+function goToCheckout() {
+    if (!cart.length) return;
+    window.location.href = '/finalizar.html';
+}
+
+// ══ DRAWER ══
+function openDrawer() {
+    document.getElementById('drawerOverlay').classList.add('open');
+    document.getElementById('cartDrawer').classList.add('open');
+    document.body.style.overflow = 'hidden';
+}
+function closeDrawer() {
+    document.getElementById('drawerOverlay').classList.remove('open');
+    document.getElementById('cartDrawer').classList.remove('open');
+    document.body.style.overflow = '';
+}
+
+// ══ SEARCH ══
+document.getElementById('shopSearch').addEventListener('input', e => { searchTerm = e.target.value; renderProducts(); });
+document.querySelector('.shop-search-btn').addEventListener('click', () => { searchTerm = document.getElementById('shopSearch').value; renderProducts(); });
+document.getElementById('navSearch').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { searchTerm = e.target.value; document.getElementById('shopSearch').value = searchTerm; renderProducts(); }
+});
+document.querySelector('.chip[data-store="all"]').addEventListener('click', () => setStore('all'));
+
+// ══ INIT ══
+loadProducts();
+renderCart();
+</script>
+</body>
 </html>
-=======
-<!DOCTYPE html>
-<html lang="pt-br">
-	<head>
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<title>Vitrinni</title>
-		<script src="https://cdn.tailwindcss.com"></script>
-	</head>
-
-	<body class="bg-gray-100 font-sans">
-
-		<!-- HEADER -->
-		<header class="bg-red-600 text-white p-3 flex flex-col md:flex-row items-center gap-2">
-			  <h1 class="text-lg md:text-xl font-bold">Vitrinni 🥊</h1>
-			    <input id="busca" placeholder="Buscar produtos..." 
-					        class="p-2 rounded text-black w-full md:w-1/2">
-		</header>
-
-		<!-- CATEGORIAS -->
-		<div class="flex overflow-x-auto gap-2 p-3 bg-white shadow">
-			  <button class="categoria bg-red-500 text-white px-3 py-1 rounded">Todos</button>
-			    <button class="categoria px-3 py-1 bg-gray-200 rounded">Luva</button>
-			      <button class="categoria px-3 py-1 bg-gray-200 rounded">Kimono</button>
-			        <button class="categoria px-3 py-1 bg-gray-200 rounded">Caneleira</button>
-				  <button class="categoria px-3 py-1 bg-gray-200 rounded">Bandagem</button>
-				    <button class="categoria px-3 py-1 bg-gray-200 rounded">Protetor</button>
-				      <button class="categoria px-3 py-1 bg-gray-200 rounded">Equipamentos</button>
-		</div>
-
-		<!-- PRODUTOS -->
-		<div id="produtos" class="grid grid-cols-2 md:grid-cols-4 gap-4 p-4"></div>
-
-		<!-- BOTÃO CARRINHO MOBILE -->
-		<button onclick="toggleCarrinho()" 
-			class="fixed bottom-4 right-4 bg-red-600 text-white p-4 rounded-full shadow-lg md:hidden">
-			🛒
-		</button>
-
-		<!-- CARRINHO -->
-		<div id="carrinhoBox" class="fixed right-0 top-0 w-full md:w-80 h-full bg-white shadow-lg p-4 overflow-auto translate-x-full md:translate-x-0 transition">
-			  <h2 class="font-bold mb-2">🛒 Carrinho</h2>
-			    <ul id="carrinho"></ul>
-			      <p id="total" class="font-bold mt-2"></p>
-			        <button id="finalizar" class="bg-green-600 text-white w-full p-2 mt-2 rounded">Finalizar Compra</button>
-		</div>
-
-		<script>
-			const produtos = [
-				  // LUVAS
-				  {nome:"Luva Everlast", preco:199.9, cat:"Luva"},
-				  {nome:"Luva Adidas", preco:229.9, cat:"Luva"},
-				  {nome:"Luva Profissional", preco:259.9, cat:"Luva"},
-				  {nome:"Luva Iniciante", preco:149.9, cat:"Luva"},
-
-				  // KIMONOS
-				  {nome:"Kimono Branco", preco:349.9, cat:"Kimono"},
-				  {nome:"Kimono Azul", preco:369.9, cat:"Kimono"},
-				  {nome:"Kimono Preto", preco:389.9, cat:"Kimono"},
-
-				  // CANELEIRAS
-				  {nome:"Caneleira Simples", preco:129.9, cat:"Caneleira"},
-				  {nome:"Caneleira Profissional", preco:179.9, cat:"Caneleira"},
-
-				  // BANDAGENS
-				  {nome:"Bandagem 3m", preco:29.9, cat:"Bandagem"},
-				  {nome:"Bandagem 5m", preco:39.9, cat:"Bandagem"},
-
-				  // PROTETORES
-				  {nome:"Protetor Bucal Básico", preco:39.9, cat:"Protetor"},
-				  {nome:"Protetor Bucal Profissional", preco:59.9, cat:"Protetor"},
-
-				  // EQUIPAMENTOS
-				  {nome:"Saco de Pancada 1m", preco:499.9, cat:"Equipamentos"},
-				  {nome:"Saco de Pancada Profissional", preco:699.9, cat:"Equipamentos"},
-				  {nome:"Corda de Pular", preco:49.9, cat:"Equipamentos"},
-				  {nome:"Manopla de Treino", preco:89.9, cat:"Equipamentos"}
-				];
-
-			let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
-			let categoriaAtual = "Todos";
-
-			function salvar(){localStorage.setItem("carrinho",JSON.stringify(carrinho));}
-			function formatar(v){return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});} 
-
-			function render(){
-				  const div=document.getElementById("produtos");
-				  div.innerHTML="";
-
-				  let lista=produtos.filter(p=>
-					      (categoriaAtual=="Todos" || p.cat==categoriaAtual) &&
-					      p.nome.toLowerCase().includes(busca.value.toLowerCase())
-					    );
-
-				  lista.forEach(p=>{
-					      const c=document.createElement("div");
-					      c.className="bg-white p-3 rounded shadow hover:shadow-lg";
-
-					      c.innerHTML=`
-					            <h3 class="font-bold text-sm">${p.nome}</h3>
-						          <p class="text-green-600">${formatar(p.preco)}</p>
-							        <button class="bg-red-500 text-white w-full mt-2 rounded">Adicionar</button>`;
-
-					      c.querySelector("button").onclick=()=>addCarrinho(p);
-					      div.appendChild(c);
-					    });
-			}
-
-			function addCarrinho(p){
-				  const item=carrinho.find(i=>i.nome===p.nome);
-				  if(item)item.qtd++;
-				  else carrinho.push({...p,qtd:1});
-				  salvar(); atualizar();
-			}
-
-			function atualizar(){
-				  const ul=document.getElementById("carrinho");
-				  const totalEl=document.getElementById("total");
-				  ul.innerHTML="";
-				  let total=0;
-
-				  carrinho.forEach((i,idx)=>{
-					      total+=i.preco*i.qtd;
-
-					      const li=document.createElement("li");
-					      li.className="mb-2 border-b pb-2";
-					      li.innerHTML=`
-					            <div class="flex justify-between">
-						            <span>${i.nome}</span>
-							            <span>${formatar(i.preco*i.qtd)}</span>
-								          </div>
-									        <div class="flex gap-2 mt-1">
-										        <button class="bg-gray-300 px-2">-</button>
-											        <span>${i.qtd}</span>
-												        <button class="bg-gray-300 px-2">+</button>
-													      </div>`;
-
-					      const btns=li.querySelectorAll("button");
-					      btns[0].onclick=()=>{i.qtd--; if(i.qtd<=0)carrinho.splice(idx,1); salvar(); atualizar();};
-					      btns[1].onclick=()=>{i.qtd++; salvar(); atualizar();};
-
-					      ul.appendChild(li);
-					    });
-
-				  totalEl.innerText="Total: "+formatar(total);
-			}
-
-			function toggleCarrinho(){
-				  document.getElementById("carrinhoBox").classList.toggle("translate-x-full");
-			}
-
-			// EVENTOS
-			busca.oninput=render;
-
-			document.querySelectorAll(".categoria").forEach(btn=>{
-				  btn.onclick=()=>{
-					      categoriaAtual=btn.innerText;
-					      document.querySelectorAll(".categoria").forEach(b=>b.classList.remove("bg-red-500","text-white"));
-					      btn.classList.add("bg-red-500","text-white");
-					      render();
-					    };
-			});
-
-			finalizar.onclick=()=>{
-				  if(!carrinho.length)return alert("Carrinho vazio");
-				  alert("Compra finalizada!\n"+document.getElementById("total").innerText);
-				  carrinho=[]; salvar(); atualizar();
-			};
-
-			render(); atualizar();
-		</script>
-
-	</body>
-</html>
->>>>>>> 78ffcba0aac31c7a25c75b9c2dafc68e97801630

@@ -346,3 +346,37 @@ def search_stores(name: str) -> dict:
 
     except Exception as e:
         return {"success": False, "error": f"Database error: {e}"}
+
+# Listar todos os produtos de todas as lojas
+
+def list_all_products() -> dict:
+    """
+    Return every product across all stores, joined with store name and inventory.
+
+    Returns
+    -------
+    {"success": True,  "products": [{"id", "name", "description", "price", "quantity", "store_id", "store_name"}, ...]}
+    {"success": False, "error":    <str>}
+    """
+    try:
+        with _get_conn(STORES_DB) as conn:
+            rows = conn.execute("""
+                SELECT
+                    p.id,
+                    p.name,
+                    p.description,
+                    p.price,
+                    p.store_id,
+                    s.store_name,
+                    COALESCE(i.quantity, 0) AS quantity
+                FROM   products  p
+                JOIN   stores    s ON s.id = p.store_id
+                LEFT JOIN inventory i
+                       ON i.product_id = p.id AND i.store_id = p.store_id
+                ORDER  BY s.store_name, p.name
+            """).fetchall()
+
+        return {"success": True, "products": [dict(r) for r in rows]}
+
+    except Exception as e:
+        return {"success": False, "error": f"Database error: {e}"}

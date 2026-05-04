@@ -68,9 +68,31 @@
                     <span>Menu</span>
                 </div>
 
-                <div class="carrinho-icon">
-                    <i class="fa-solid fa-cart-arrow-down"></i>
-                    <span>Carrinho</span>
+                <div class="carrinho-wrapper" id="carrinhoWrapper">
+                    <div class="carrinho-icon" id="carrinhoToggle" onclick="toggleCartDropdown()">
+                        <i class="fa-solid fa-cart-arrow-down"></i>
+                        <span>Carrinho</span>
+                        <span class="cart-count-badge" id="cartCountBadge" style="display:none;"></span>
+                    </div>
+                    <div class="cart-dropdown" id="cartDropdown">
+                        <div class="cart-dropdown-header">
+                            <span class="cart-dropdown-title">Carrinho</span>
+                            <a href="/loja.html" class="cart-dropdown-link">Ir para a loja →</a>
+                        </div>
+                        <div class="cart-dropdown-items" id="cartDropdownItems">
+                            <div class="cart-dropdown-empty">
+                                <i class="fas fa-cart-arrow-down"></i>
+                                <p>Carrinho vazio</p>
+                            </div>
+                        </div>
+                        <div class="cart-dropdown-footer" id="cartDropdownFooter" style="display:none;">
+                            <div class="cart-dropdown-total">
+                                <span>Total</span>
+                                <span id="cartDropdownTotal">R$ 0,00</span>
+                            </div>
+                            <a href="/finalizar.html" class="cart-dropdown-btn">Finalizar Compra</a>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -109,7 +131,7 @@
     <div class="featured-products">
         <div class="products-header">
             <h2>Produtos em destaque</h2>
-            <div class="ver-todos" id="verTodosProdutos">Ver todos →</div>
+            <a href="/loja.html" class="ver-todos" id="verTodosProdutos" style="text-decoration:none;">Ver todos →</a>
         </div>
 
         <!-- card slide dos produtos em destaque -->
@@ -304,5 +326,224 @@
         }
     })();
 </script>
+
+<style>
+/* ── cart wrapper ── */
+.carrinho-wrapper {
+    position: relative;
+}
+
+.cart-count-badge {
+    background: #F9A825;
+    color: #2c1c0c;
+    font-size: 0.6rem;
+    font-weight: 800;
+    border-radius: 30px;
+    padding: 0.1rem 0.45rem;
+    margin-left: 2px;
+    vertical-align: middle;
+}
+
+/* ── dropdown ── */
+.cart-dropdown {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 10px);
+    width: 320px;
+    background: white;
+    border-radius: 20px;
+    border: 1px solid #efe4d8;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+    z-index: 2000;
+    overflow: hidden;
+    animation: dropIn 0.18s ease;
+}
+.cart-dropdown.open { display: block; }
+
+@keyframes dropIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+.cart-dropdown-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.2rem 0.8rem;
+    border-bottom: 1px solid #f0e9e0;
+}
+.cart-dropdown-title {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #1a1a1a;
+}
+.cart-dropdown-link {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #000;
+    text-decoration: none;
+}
+.cart-dropdown-link:hover { text-decoration: underline; }
+
+.cart-dropdown-items {
+    max-height: 280px;
+    overflow-y: auto;
+    padding: 0.6rem 1.2rem;
+}
+.cart-dropdown-items::-webkit-scrollbar { width: 3px; }
+.cart-dropdown-items::-webkit-scrollbar-thumb { background: #e0d5c8; border-radius: 3px; }
+
+.cart-dropdown-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem 0;
+    color: #b0997f;
+    text-align: center;
+    gap: 0.4rem;
+}
+.cart-dropdown-empty i { font-size: 1.8rem; opacity: 0.4; }
+.cart-dropdown-empty p { font-size: 0.82rem; }
+
+.cart-drop-item {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.55rem 0;
+    border-bottom: 1px solid #f5f0eb;
+}
+.cart-drop-item:last-child { border-bottom: none; }
+.cart-drop-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    background: linear-gradient(135deg, #2c2c2c, #1a1a1a);
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.cart-drop-icon i { color: #F9A825; font-size: 0.95rem; }
+.cart-drop-info { flex: 1; min-width: 0; }
+.cart-drop-name {
+    font-size: 0.8rem; font-weight: 700; color: #1a1a1a;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.cart-drop-qty { font-size: 0.7rem; color: #8b775e; }
+.cart-drop-price { font-size: 0.82rem; font-weight: 800; color: #000; white-space: nowrap; }
+
+.cart-dropdown-footer {
+    padding: 0.8rem 1.2rem 1rem;
+    border-top: 1px solid #f0e9e0;
+    background: #fefaf5;
+}
+.cart-dropdown-total {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: #1a1a1a;
+    margin-bottom: 0.8rem;
+}
+.cart-dropdown-btn {
+    display: block;
+    background: #000; color: white;
+    text-align: center; text-decoration: none;
+    padding: 0.7rem; border-radius: 40px;
+    font-size: 0.85rem; font-weight: 700;
+    transition: background 0.2s;
+}
+.cart-dropdown-btn:hover { background: #333; }
+</style>
+
+<script>
+(function() {
+    const iconMap = [
+        [/luva|boxe|sparring/i,           'fas fa-mitten'],
+        [/kimono|judogi|dobok|uniforme/i, 'fas fa-tshirt'],
+        [/faixa/i,                        'fas fa-ribbon'],
+        [/caneleira/i,                    'fas fa-shoe-prints'],
+        [/capacete/i,                     'fas fa-hard-hat'],
+        [/bandagem/i,                     'fas fa-band-aid'],
+        [/rashguard|shorts/i,             'fas fa-running'],
+        [/tatame|tapete/i,                'fas fa-border-all'],
+        [/saco.*pancada/i,                'fas fa-circle'],
+        [/cronômetro|timer/i,             'fas fa-stopwatch'],
+        [/manequim/i,                     'fas fa-male'],
+        [/bastão/i,                       'fas fa-baseball-bat-ball'],
+        [/protetor.*bucal/i,              'fas fa-tooth'],
+        [/protetor|joelheira/i,           'fas fa-shield-alt'],
+        [/bolsa|bag/i,                    'fas fa-shopping-bag'],
+    ];
+    function getIcon(name) {
+        for (const [re, icon] of iconMap) if (re.test(name)) return icon;
+        return 'fas fa-fist-raised';
+    }
+    function fmt(val) {
+        return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    }
+
+    function getCart() {
+        return JSON.parse(sessionStorage.getItem('vitrinni_cart') || '[]');
+    }
+
+    function renderDropdown() {
+        const cart = getCart();
+        const badge = document.getElementById('cartCountBadge');
+        const itemsEl = document.getElementById('cartDropdownItems');
+        const footerEl = document.getElementById('cartDropdownFooter');
+        const totalEl = document.getElementById('cartDropdownTotal');
+
+        const totalQty = cart.reduce((s, i) => s + i.qty, 0);
+
+        // badge
+        if (totalQty > 0) {
+            badge.textContent = totalQty;
+            badge.style.display = 'inline';
+        } else {
+            badge.style.display = 'none';
+        }
+
+        if (!cart.length) {
+            itemsEl.innerHTML = `<div class="cart-dropdown-empty">
+                <i class="fas fa-cart-arrow-down"></i>
+                <p>Carrinho vazio</p>
+            </div>`;
+            footerEl.style.display = 'none';
+            return;
+        }
+
+        const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+        itemsEl.innerHTML = cart.map(i => `
+            <div class="cart-drop-item">
+                <div class="cart-drop-icon"><i class="${getIcon(i.name)}"></i></div>
+                <div class="cart-drop-info">
+                    <div class="cart-drop-name">${i.name}</div>
+                    <div class="cart-drop-qty">x${i.qty} · ${i.store_name}</div>
+                </div>
+                <div class="cart-drop-price">${fmt(i.price * i.qty)}</div>
+            </div>`).join('');
+
+        totalEl.textContent = fmt(total);
+        footerEl.style.display = 'block';
+    }
+
+    window.toggleCartDropdown = function() {
+        const dd = document.getElementById('cartDropdown');
+        dd.classList.toggle('open');
+        if (dd.classList.contains('open')) renderDropdown();
+    };
+
+    // close when clicking outside
+    document.addEventListener('click', function(e) {
+        const wrapper = document.getElementById('carrinhoWrapper');
+        if (wrapper && !wrapper.contains(e.target)) {
+            document.getElementById('cartDropdown').classList.remove('open');
+        }
+    });
+
+    // render badge on page load
+    renderDropdown();
+})();
+</script>
+
 </body>
 </html>

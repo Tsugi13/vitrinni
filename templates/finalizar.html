@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vitrinni · Finalizar Compra</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+    <style>
+        .user-menu { display: flex; align-items: center; gap: 4px; }
+        .login-link.logged-in { background: #f0faf0; border-color: #b2dfdb; color: #1b5e20; cursor: default; }
+        .logout-link {
+            display: flex; align-items: center; justify-content: center;
+            width: 34px; height: 34px; border-radius: 50%;
+            color: #666; font-size: 0.9rem;
+            transition: background 0.2s, color 0.2s; text-decoration: none;
+        }
+        .logout-link:hover { background: #fee2e2; color: #b91c1c; }
+
+        .checkout-layout {
+            max-width: 1100px;
+            margin: 2.5rem auto;
+            padding: 0 2rem;
+            display: grid;
+            grid-template-columns: 1fr 360px;
+            gap: 2rem;
+            align-items: start;
+        }
+
+        /* ── section cards ── */
+        .section-card {
+            background: white; border-radius: 24px;
+            border: 1px solid #efe4d8;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.03);
+            padding: 1.8rem;
+            margin-bottom: 1.5rem;
+        }
+        .section-card h2 {
+            font-size: 1.1rem; font-weight: 800; color: #1a1a1a;
+            margin-bottom: 1.3rem; display: flex; align-items: center; gap: 8px;
+        }
+        .section-card h2 i { color: #F9A825; }
+
+        /* ── form fields ── */
+        .field-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+        .field-row.single { grid-template-columns: 1fr; }
+        .field-group { display: flex; flex-direction: column; gap: 0.35rem; }
+        .field-group label { font-size: 0.78rem; font-weight: 700; color: #6b5a48; text-transform: uppercase; letter-spacing: 0.3px; }
+        .field-input {
+            border: 1px solid #E5E0D5; border-radius: 12px;
+            padding: 0.7rem 1rem; font-size: 0.9rem;
+            font-family: 'Inter', sans-serif; color: #2c221b;
+            background: #fefaf5; outline: none; transition: 0.2s;
+        }
+        .field-input:focus { border-color: #000; background: white; box-shadow: 0 0 0 3px rgba(0,0,0,0.07); }
+        .field-input::placeholder { color: #b0997f; }
+
+        /* ── payment method ── */
+        .payment-options { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.2rem; }
+        .pay-opt {
+            flex: 1; min-width: 120px;
+            border: 2px solid #E5E0D5; border-radius: 14px;
+            padding: 0.9rem 1rem; cursor: pointer; transition: all 0.18s;
+            display: flex; align-items: center; gap: 10px;
+            font-size: 0.88rem; font-weight: 600; color: #332211;
+            background: #fefaf5;
+        }
+        .pay-opt:hover { border-color: #aaa; background: #f5f0eb; }
+        .pay-opt.selected { border-color: #000; background: #000; color: white; }
+        .pay-opt i { font-size: 1.1rem; }
+        .pay-opt.selected i { color: #F9A825; }
+
+        /* card fields */
+        .card-fields { display: none; }
+        .card-fields.visible { display: block; }
+
+        /* ── order summary ── */
+        .summary-card {
+            background: white; border-radius: 24px; border: 1px solid #efe4d8;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.04); padding: 1.5rem;
+            position: sticky; top: 100px;
+        }
+        .summary-card h2 { font-size: 1.1rem; font-weight: 800; color: #1a1a1a; margin-bottom: 1.2rem; }
+
+        .summary-item {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            gap: 0.5rem; padding: 0.6rem 0; border-bottom: 1px solid #f0e9e0; font-size: 0.85rem;
+        }
+        .summary-item:last-of-type { border-bottom: none; }
+        .summary-item-name { color: #2c221b; font-weight: 500; flex: 1; }
+        .summary-item-qty { color: #8b775e; font-size: 0.78rem; white-space: nowrap; }
+        .summary-item-price { font-weight: 700; white-space: nowrap; }
+
+        .summary-divider { border: none; border-top: 1px solid #e9dfd3; margin: 0.8rem 0; }
+        .summary-row { display: flex; justify-content: space-between; font-size: 0.85rem; margin-bottom: 0.5rem; color: #6b5a48; }
+        .summary-total { display: flex; justify-content: space-between; font-size: 1.25rem; font-weight: 800; color: #000; margin: 0.8rem 0 1.2rem; }
+
+        .btn-confirm {
+            width: 100%; background: #000; color: white; border: none;
+            padding: 1rem; border-radius: 40px; font-size: 1rem; font-weight: 700;
+            cursor: pointer; transition: 0.2s;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-confirm:hover { background: #222; transform: translateY(-1px); }
+        .btn-confirm:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+
+        .back-link {
+            display: flex; align-items: center; gap: 6px;
+            color: #8b775e; font-size: 0.82rem; font-weight: 600;
+            text-decoration: none; margin-bottom: 1.5rem; transition: color 0.2s;
+        }
+        .back-link:hover { color: #000; }
+
+        /* ── success overlay ── */
+        .success-overlay {
+            display: none; position: fixed; inset: 0;
+            background: rgba(255,255,255,0.96); z-index: 2000;
+            flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; padding: 2rem;
+        }
+        .success-overlay.show { display: flex; }
+        .success-icon {
+            width: 90px; height: 90px; border-radius: 50%;
+            background: #dcfce7; display: flex; align-items: center; justify-content: center;
+            font-size: 2.5rem; color: #16a34a; margin-bottom: 1.5rem;
+            animation: pop 0.4s ease;
+        }
+        @keyframes pop { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .success-overlay h2 { font-size: 1.8rem; font-weight: 800; color: #1a1a1a; margin-bottom: 0.5rem; }
+        .success-overlay p { color: #6b5a48; font-size: 1rem; margin-bottom: 2rem; max-width: 380px; }
+        .btn-back-home {
+            background: #000; color: white; border: none;
+            padding: 0.9rem 2rem; border-radius: 40px;
+            font-size: 0.95rem; font-weight: 700; cursor: pointer; transition: 0.2s;
+        }
+        .btn-back-home:hover { background: #333; }
+
+        /* empty cart state */
+        .empty-checkout {
+            grid-column: 1/-1; text-align: center; padding: 5rem 2rem; color: #8b775e;
+        }
+        .empty-checkout i { font-size: 3rem; margin-bottom: 1rem; display: block; opacity: 0.4; }
+        .empty-checkout h2 { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem; }
+        .empty-checkout a { color: #000; font-weight: 700; }
+
+        @media (max-width: 860px) {
+            .checkout-layout { grid-template-columns: 1fr; }
+            .summary-card { position: static; }
+        }
+        @media (max-width: 480px) {
+            .field-row { grid-template-columns: 1fr; }
+            .checkout-layout { padding: 0 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ══ NAVBAR ══ -->
+<nav class="navbar">
+    <div class="nav-container">
+        <div class="brand-area">
+            <a href="/" class="logo">
+                <img src="https://i.gyazo.com/fad9d8fb6ce81b4a456139e5c56d25f7.png" alt="Vitrinni" class="logo-img">
+            </a>
+        </div>
+        <div class="nav-actions">
+            <div class="language-selector">
+                <i class="fas fa-globe-americas"></i>
+                <span>PT · BR</span>
+                <i class="fas fa-chevron-down" style="font-size:0.7rem;opacity:0.7;"></i>
+            </div>
+            <div class="search-wrapper">
+                <input type="text" class="search-input" placeholder="Buscar arte marcial, academia, produto...">
+                <button class="search-btn"><i class="fas fa-search"></i></button>
+            </div>
+            <div class="menu-section">
+                {% if user %}
+                <div class="user-menu">
+                    <a class="login-link logged-in">
+                        <i class="fas fa-user-circle"></i>
+                        <span>{{ user.name.split()[0] }}</span>
+                    </a>
+                    <a href="/logout" class="logout-link" title="Sair">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </a>
+                </div>
+                {% else %}
+                <a href="/login.html" class="login-link">
+                    <i class="fas fa-user-circle"></i>
+                    <span>Fazer login</span>
+                </a>
+                {% endif %}
+                <div class="menu-icon"><i class="fas fa-bars"></i><span>Menu</span></div>
+                <a href="/loja.html" class="carrinho-icon">
+                    <i class="fa-solid fa-cart-arrow-down"></i>
+                    <span>Carrinho</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- ══ SUCCESS OVERLAY ══ -->
+<div class="success-overlay" id="successOverlay">
+    <div class="success-icon"><i class="fas fa-check"></i></div>
+    <h2>Pedido confirmado! 🥋</h2>
+    <p>Obrigado pela sua compra. Em breve você receberá uma confirmação por e-mail.</p>
+    <button class="btn-back-home" onclick="window.location.href='/'">Voltar para a página inicial</button>
+</div>
+
+<!-- ══ MAIN ══ -->
+<div class="checkout-layout" id="checkoutLayout">
+    <!-- filled by JS -->
+</div>
+
+<div style="max-width:1100px;margin:2.5rem auto 0;padding:0 2rem;">
+    <hr>
+    <div class="footer-note">🥊 VITRINNI — Encontre sua academia ideal e os melhores equipamentos para seu treino.</div>
+</div>
+
+<script>
+function fmt(val) { return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }); }
+
+const iconMap = [
+    [/luva|boxe|sparring/i,            'fas fa-mitten'],
+    [/kimono|judogi|dobok|uniforme/i,  'fas fa-tshirt'],
+    [/faixa/i,                         'fas fa-ribbon'],
+    [/caneleira/i,                     'fas fa-shoe-prints'],
+    [/capacete/i,                      'fas fa-hard-hat'],
+    [/bandagem/i,                      'fas fa-band-aid'],
+    [/rashguard|shorts/i,              'fas fa-running'],
+    [/tatame|tapete/i,                 'fas fa-border-all'],
+    [/saco.*pancada|saco.*treino/i,    'fas fa-circle'],
+    [/cronômetro|timer/i,              'fas fa-stopwatch'],
+    [/manequim/i,                      'fas fa-male'],
+    [/bastão/i,                        'fas fa-baseball-bat-ball'],
+    [/protetor.*bucal/i,               'fas fa-tooth'],
+    [/protetor|joelheira/i,            'fas fa-shield-alt'],
+    [/bolsa|bag/i,                     'fas fa-shopping-bag'],
+];
+function getIcon(name) {
+    for (const [re, icon] of iconMap) if (re.test(name)) return icon;
+    return 'fas fa-fist-raised';
+}
+
+let cart = JSON.parse(sessionStorage.getItem('vitrinni_cart') || '[]');
+let selectedPayment = 'credit';
+
+function renderPage() {
+    const layout = document.getElementById('checkoutLayout');
+
+    if (!cart.length) {
+        layout.innerHTML = `
+            <div class="empty-checkout">
+                <i class="fas fa-cart-arrow-down"></i>
+                <h2>Seu carrinho está vazio</h2>
+                <p>Adicione produtos antes de finalizar a compra.</p>
+                <br>
+                <a href="/loja.html">← Voltar para a loja</a>
+            </div>`;
+        return;
+    }
+
+    const subtotal = cart.reduce((s, i) => s + i.price * i.qty, 0);
+    const frete = subtotal >= 300 ? 0 : 19.90;
+    const total = subtotal + frete;
+
+    layout.innerHTML = `
+    <div>
+        <a href="/loja.html" class="back-link"><i class="fas fa-arrow-left"></i> Voltar à loja</a>
+
+        <!-- Entrega -->
+        <div class="section-card">
+            <h2><i class="fas fa-map-marker-alt"></i> Endereço de entrega</h2>
+            <div class="field-row">
+                <div class="field-group">
+                    <label>Nome completo</label>
+                    <input class="field-input" placeholder="Seu nome" id="fNome">
+                </div>
+                <div class="field-group">
+                    <label>CPF</label>
+                    <input class="field-input" placeholder="000.000.000-00" id="fCpf" maxlength="14">
+                </div>
+            </div>
+            <div class="field-row single">
+                <div class="field-group">
+                    <label>CEP</label>
+                    <input class="field-input" placeholder="00000-000" id="fCep" maxlength="9">
+                </div>
+            </div>
+            <div class="field-row">
+                <div class="field-group">
+                    <label>Rua / Avenida</label>
+                    <input class="field-input" placeholder="Nome da rua" id="fRua">
+                </div>
+                <div class="field-group">
+                    <label>Número</label>
+                    <input class="field-input" placeholder="123" id="fNum">
+                </div>
+            </div>
+            <div class="field-row">
+                <div class="field-group">
+                    <label>Bairro</label>
+                    <input class="field-input" placeholder="Seu bairro" id="fBairro">
+                </div>
+                <div class="field-group">
+                    <label>Cidade</label>
+                    <input class="field-input" placeholder="Sua cidade" id="fCidade">
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagamento -->
+        <div class="section-card">
+            <h2><i class="fas fa-credit-card"></i> Forma de pagamento</h2>
+            <div class="payment-options">
+                <div class="pay-opt ${selectedPayment==='credit'?'selected':''}" onclick="selectPayment('credit')">
+                    <i class="fas fa-credit-card"></i> Cartão de crédito
+                </div>
+                <div class="pay-opt ${selectedPayment==='debit'?'selected':''}" onclick="selectPayment('debit')">
+                    <i class="fas fa-credit-card"></i> Cartão de débito
+                </div>
+                <div class="pay-opt ${selectedPayment==='pix'?'selected':''}" onclick="selectPayment('pix')">
+                    <i class="fas fa-qrcode"></i> Pix
+                </div>
+                <div class="pay-opt ${selectedPayment==='boleto'?'selected':''}" onclick="selectPayment('boleto')">
+                    <i class="fas fa-barcode"></i> Boleto
+                </div>
+            </div>
+
+            <div class="card-fields ${(selectedPayment==='credit'||selectedPayment==='debit')?'visible':''}" id="cardFields">
+                <div class="field-row single">
+                    <div class="field-group">
+                        <label>Número do cartão</label>
+                        <input class="field-input" placeholder="0000 0000 0000 0000" maxlength="19" id="fCard">
+                    </div>
+                </div>
+                <div class="field-row">
+                    <div class="field-group">
+                        <label>Nome no cartão</label>
+                        <input class="field-input" placeholder="Como está no cartão" id="fCardName">
+                    </div>
+                    <div class="field-group">
+                        <label>Validade</label>
+                        <input class="field-input" placeholder="MM/AA" maxlength="5" id="fVal">
+                    </div>
+                </div>
+                <div class="field-row single" style="max-width:160px;">
+                    <div class="field-group">
+                        <label>CVV</label>
+                        <input class="field-input" placeholder="000" maxlength="4" id="fCvv" type="password">
+                    </div>
+                </div>
+            </div>
+
+            ${selectedPayment==='pix' ? `
+            <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:14px;padding:1.2rem;display:flex;align-items:center;gap:12px;">
+                <i class="fas fa-qrcode" style="font-size:2rem;color:#16a34a;"></i>
+                <div>
+                    <div style="font-weight:700;color:#15803d;margin-bottom:0.2rem;">Pix – pagamento instantâneo</div>
+                    <div style="font-size:0.82rem;color:#166534;">O QR Code será gerado após confirmar o pedido.</div>
+                </div>
+            </div>` : ''}
+
+            ${selectedPayment==='boleto' ? `
+            <div style="background:#fefce8;border:1px solid #fde68a;border-radius:14px;padding:1.2rem;display:flex;align-items:center;gap:12px;">
+                <i class="fas fa-barcode" style="font-size:2rem;color:#b45309;"></i>
+                <div>
+                    <div style="font-weight:700;color:#92400e;margin-bottom:0.2rem;">Boleto bancário</div>
+                    <div style="font-size:0.82rem;color:#78350f;">O boleto será gerado após confirmar. Vencimento em 3 dias úteis.</div>
+                </div>
+            </div>` : ''}
+        </div>
+    </div>
+
+    <!-- ORDER SUMMARY -->
+    <div class="summary-card">
+        <h2>Resumo do pedido</h2>
+        ${cart.map(i => `
+        <div class="summary-item">
+            <div>
+                <div class="summary-item-name">${i.name}</div>
+                <div class="summary-item-qty">${i.store_name} · x${i.qty}</div>
+            </div>
+            <div class="summary-item-price">${fmt(i.price * i.qty)}</div>
+        </div>`).join('')}
+
+        <hr class="summary-divider">
+        <div class="summary-row"><span>Subtotal</span><span>${fmt(subtotal)}</span></div>
+        <div class="summary-row">
+            <span>Frete</span>
+            <span style="color:${frete===0?'#16a34a':'inherit'}">${frete === 0 ? '✓ Grátis' : fmt(frete)}</span>
+        </div>
+        ${frete > 0 ? `<div style="font-size:0.72rem;color:#8b775e;margin-bottom:0.5rem;">Frete grátis acima de R$ 300,00</div>` : ''}
+        <div class="summary-total"><span>Total</span><span>${fmt(total)}</span></div>
+
+        <button class="btn-confirm" onclick="confirmOrder()">
+            <i class="fas fa-lock"></i> Confirmar pedido
+        </button>
+        <div style="text-align:center;margin-top:0.8rem;font-size:0.72rem;color:#8b775e;">
+            <i class="fas fa-shield-alt"></i> Compra 100% segura e protegida
+        </div>
+    </div>`;
+
+    // card number formatting
+    const cardInput = document.getElementById('fCard');
+    if (cardInput) {
+        cardInput.addEventListener('input', e => {
+            let v = e.target.value.replace(/\D/g,'').slice(0,16);
+            e.target.value = v.replace(/(.{4})/g,'$1 ').trim();
+        });
+    }
+    const valInput = document.getElementById('fVal');
+    if (valInput) {
+        valInput.addEventListener('input', e => {
+            let v = e.target.value.replace(/\D/g,'').slice(0,4);
+            if (v.length > 2) v = v.slice(0,2) + '/' + v.slice(2);
+            e.target.value = v;
+        });
+    }
+    const cpfInput = document.getElementById('fCpf');
+    if (cpfInput) {
+        cpfInput.addEventListener('input', e => {
+            let v = e.target.value.replace(/\D/g,'').slice(0,11);
+            v = v.replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d)/,'$1.$2').replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+            e.target.value = v;
+        });
+    }
+    const cepInput = document.getElementById('fCep');
+    if (cepInput) {
+        cepInput.addEventListener('input', e => {
+            let v = e.target.value.replace(/\D/g,'').slice(0,8);
+            if (v.length > 5) v = v.slice(0,5) + '-' + v.slice(5);
+            e.target.value = v;
+        });
+    }
+}
+
+function selectPayment(type) {
+    selectedPayment = type;
+    renderPage();
+}
+
+function confirmOrder() {
+    // Basic validation
+    const nome = document.getElementById('fNome')?.value.trim();
+    const rua  = document.getElementById('fRua')?.value.trim();
+    const cep  = document.getElementById('fCep')?.value.trim();
+    if (!nome || !rua || !cep) {
+        alert('Por favor, preencha todos os campos de entrega.');
+        return;
+    }
+    if ((selectedPayment === 'credit' || selectedPayment === 'debit')) {
+        const card = document.getElementById('fCard')?.value.replace(/\s/g,'');
+        if (!card || card.length < 16) { alert('Número do cartão inválido.'); return; }
+    }
+    // clear cart and show success
+    sessionStorage.removeItem('vitrinni_cart');
+    cart = [];
+    document.getElementById('successOverlay').classList.add('show');
+}
+
+renderPage();
+</script>
+</body>
+</html>
