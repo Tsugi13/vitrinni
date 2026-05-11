@@ -9,6 +9,6 @@ Requisitos:
 - Sistema de assinatura
 - Sistema de cupons
 - Sistema de criptografia ✅
-- Área de suporte
+- Área de suporte ✅
 - Sistemas de promoção
 - Cadastro das lojas e usuários ✅
