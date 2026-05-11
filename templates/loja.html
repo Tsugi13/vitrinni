@@ -10,6 +10,71 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='loja.css') }}">
+    <!-- navbar dropdown styles -->
+    <style>
+        .user-menu { display: flex; align-items: center; gap: 4px; }
+        .login-link.logged-in { background: #f0faf0; border-color: #b2dfdb; color: #1b5e20; cursor: default; }
+        .menu-wrapper, .carrinho-wrapper { position: relative; }
+        .menu-dropdown {
+            display: none; position: absolute; right: 0; top: calc(100% + 10px);
+            width: 220px; background: white; border-radius: 18px;
+            border: 1px solid #efe4d8; box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+            z-index: 2000; overflow: hidden; animation: dropIn 0.18s ease;
+        }
+        .menu-dropdown.open { display: block; }
+        .menu-dropdown a, .menu-dropdown button {
+            display: flex; align-items: center; gap: 10px;
+            width: 100%; padding: 0.85rem 1.2rem;
+            font-size: 0.88rem; font-weight: 600; color: #332211;
+            text-decoration: none; background: none; border: none;
+            cursor: pointer; font-family: 'Inter', sans-serif;
+            transition: background 0.15s; text-align: left;
+        }
+        .menu-dropdown a:hover, .menu-dropdown button:hover { background: #faf5ef; }
+        .menu-dropdown a i, .menu-dropdown button i { width: 16px; color: #8b775e; }
+        .menu-dropdown .menu-divider { border: none; border-top: 1px solid #f0e9e0; margin: 0.2rem 0; }
+        .menu-dropdown .danger { color: #b91c1c; }
+        .menu-dropdown .danger i { color: #b91c1c; }
+        .menu-dropdown .danger:hover { background: #fff5f5; }
+        .cart-count-badge {
+            background: #F9A825; color: #2c1c0c; font-size: 0.6rem;
+            font-weight: 800; border-radius: 30px; padding: 0.1rem 0.45rem;
+            margin-left: 2px; vertical-align: middle;
+        }
+        .cart-dropdown {
+            display: none; position: absolute; right: 0; top: calc(100% + 10px);
+            width: 320px; background: white; border-radius: 20px;
+            border: 1px solid #efe4d8; box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+            z-index: 2000; overflow: hidden; animation: dropIn 0.18s ease;
+        }
+        .cart-dropdown.open { display: block; }
+        @keyframes dropIn {
+            from { opacity:0; transform:translateY(-8px); }
+            to   { opacity:1; transform:translateY(0); }
+        }
+        .cart-dropdown-header { display:flex; justify-content:space-between; align-items:center; padding:1rem 1.2rem 0.8rem; border-bottom:1px solid #f0e9e0; }
+        .cart-dropdown-title { font-size:0.95rem; font-weight:800; color:#1a1a1a; }
+        .cart-dropdown-link { font-size:0.78rem; font-weight:600; color:#000; text-decoration:none; }
+        .cart-dropdown-link:hover { text-decoration:underline; }
+        .cart-dropdown-items { max-height:280px; overflow-y:auto; padding:0.6rem 1.2rem; }
+        .cart-dropdown-items::-webkit-scrollbar { width:3px; }
+        .cart-dropdown-items::-webkit-scrollbar-thumb { background:#e0d5c8; border-radius:3px; }
+        .cart-dropdown-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:1.5rem 0; color:#b0997f; text-align:center; gap:0.4rem; }
+        .cart-dropdown-empty i { font-size:1.8rem; opacity:0.4; }
+        .cart-dropdown-empty p { font-size:0.82rem; }
+        .cart-drop-item { display:flex; align-items:center; gap:0.7rem; padding:0.55rem 0; border-bottom:1px solid #f5f0eb; }
+        .cart-drop-item:last-child { border-bottom:none; }
+        .cart-drop-icon { width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg,#2c2c2c,#1a1a1a); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .cart-drop-icon i { color:#F9A825; font-size:0.95rem; }
+        .cart-drop-info { flex:1; min-width:0; }
+        .cart-drop-name { font-size:0.8rem; font-weight:700; color:#1a1a1a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .cart-drop-qty { font-size:0.7rem; color:#8b775e; }
+        .cart-drop-price { font-size:0.82rem; font-weight:800; color:#000; white-space:nowrap; }
+        .cart-dropdown-footer { padding:0.8rem 1.2rem 1rem; border-top:1px solid #f0e9e0; background:#fefaf5; }
+        .cart-dropdown-total { display:flex; justify-content:space-between; font-size:0.9rem; font-weight:800; color:#1a1a1a; margin-bottom:0.8rem; }
+        .cart-dropdown-btn { display:block; background:#000; color:white; text-align:center; text-decoration:none; padding:0.7rem; border-radius:40px; font-size:0.85rem; font-weight:700; transition:background 0.2s; }
+        .cart-dropdown-btn:hover { background:#333; }
+    </style>
 </head>
 <body>
 
@@ -28,31 +93,70 @@
                 <i class="fas fa-chevron-down" style="font-size:0.7rem;opacity:0.7;"></i>
             </div>
             <div class="search-wrapper">
-                <input type="text" class="search-input" id="navSearch" placeholder="Buscar arte marcial, academia, produto...">
+                <input type="text" class="search-input" placeholder="Buscar arte marcial, academia, produto...">
                 <button class="search-btn"><i class="fas fa-search"></i></button>
             </div>
             <div class="menu-section">
                 {% if user %}
-                <div class="user-menu">
-                    <a class="login-link logged-in">
-                        <i class="fas fa-user-circle"></i>
-                        <span>{{ user.name.split()[0] }}</span>
-                    </a>
-                    <a href="/logout" class="logout-link" title="Sair">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </a>
-                </div>
+                <a class="login-link logged-in">
+                    <i class="fas fa-user-circle"></i>
+                    <span>{{ user.name.split()[0] }}</span>
+                </a>
                 {% else %}
                 <a href="/login.html" class="login-link">
                     <i class="fas fa-user-circle"></i>
                     <span>Fazer login</span>
                 </a>
                 {% endif %}
-                <div class="menu-icon"><i class="fas fa-bars"></i><span>Menu</span></div>
-                <a href="/loja.html" class="carrinho-icon">
-                    <i class="fa-solid fa-cart-arrow-down"></i>
-                    <span>Carrinho</span>
-                </a>
+
+                <!-- menu dropdown -->
+                <div class="menu-wrapper" id="menuWrapper">
+                    <div class="menu-icon" onclick="toggleMenuDropdown()">
+                        <i class="fas fa-bars"></i>
+                        <span>Menu</span>
+                    </div>
+                    <div class="menu-dropdown" id="menuDropdown">
+                        <a href="/loja.html"><i class="fas fa-store"></i> Loja</a>
+                        <a href="/suporte.html"><i class="fas fa-life-ring"></i> Suporte</a>
+                        <hr class="menu-divider">
+                        {% if user %}
+                        <button class="danger" onclick="window.location.href='/logout'">
+                            <i class="fas fa-sign-out-alt"></i> Sair
+                        </button>
+                        {% else %}
+                        <a href="/login.html"><i class="fas fa-sign-in-alt"></i> Entrar</a>
+                        <a href="/cadastro.html"><i class="fas fa-user-plus"></i> Cadastrar</a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- cart dropdown -->
+                <div class="carrinho-wrapper" id="carrinhoWrapper">
+                    <div class="carrinho-icon" onclick="toggleCartDropdown()">
+                        <i class="fa-solid fa-cart-arrow-down"></i>
+                        <span>Carrinho</span>
+                        <span class="cart-count-badge" id="cartCountBadge" style="display:none;"></span>
+                    </div>
+                    <div class="cart-dropdown" id="cartDropdown">
+                        <div class="cart-dropdown-header">
+                            <span class="cart-dropdown-title">Carrinho</span>
+                            <a href="/loja.html" class="cart-dropdown-link">Ir para a loja →</a>
+                        </div>
+                        <div class="cart-dropdown-items" id="cartDropdownItems">
+                            <div class="cart-dropdown-empty">
+                                <i class="fas fa-cart-arrow-down"></i>
+                                <p>Carrinho vazio</p>
+                            </div>
+                        </div>
+                        <div class="cart-dropdown-footer" id="cartDropdownFooter" style="display:none;">
+                            <div class="cart-dropdown-total">
+                                <span>Total</span>
+                                <span id="cartDropdownTotal">R$ 0,00</span>
+                            </div>
+                            <a href="/finalizar.html" class="cart-dropdown-btn">Finalizar Compra</a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -132,12 +236,11 @@
 <script>
 // ══ STATE ══
 let allProducts = [];
-let cart = JSON.parse(sessionStorage.getItem('vitrinni_cart') || '[]');
 let activeStore = 'all';
 let searchTerm = '';
 
 // ══ ICON MAP ══
-const iconMap = [
+const lojaIconMap = [
     [/luva|boxe|sparring/i,            'fas fa-mitten'],
     [/kimono|judogi|dobok|uniforme/i,  'fas fa-tshirt'],
     [/faixa/i,                         'fas fa-ribbon'],
@@ -156,13 +259,20 @@ const iconMap = [
     [/bolsa|bag/i,                     'fas fa-shopping-bag'],
     [/colete/i,                        'fas fa-vest'],
 ];
-function getIcon(name) {
-    for (const [re, icon] of iconMap) if (re.test(name)) return icon;
+function lojaGetIcon(name) {
+    for (const [re, icon] of lojaIconMap) if (re.test(name)) return icon;
     return 'fas fa-fist-raised';
 }
-
 function fmt(val) {
     return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+// ══ SINGLE SOURCE OF TRUTH: always read cart from sessionStorage ══
+function getCartFromStorage() {
+    return JSON.parse(sessionStorage.getItem('vitrinni_cart') || '[]');
+}
+function saveCartToStorage(cart) {
+    sessionStorage.setItem('vitrinni_cart', JSON.stringify(cart));
 }
 
 // ══ LOAD PRODUCTS ══
@@ -174,6 +284,7 @@ async function loadProducts() {
         allProducts = data.products;
         buildStoreChips();
         renderProducts();
+        renderSidebarCart(); // render sidebar from sessionStorage on load
     } catch (e) {
         document.getElementById('productGrid').innerHTML = `
             <div class="state-msg">
@@ -217,7 +328,7 @@ function renderProducts() {
     }
 
     grid.innerHTML = filtered.map(p => {
-        const icon = getIcon(p.name);
+        const icon = lojaGetIcon(p.name);
         const outOfStock = p.quantity === 0;
         return `
         <div class="prod-card">
@@ -230,7 +341,12 @@ function renderProducts() {
                     <div class="prod-price">${fmt(p.price)}</div>
                     ${outOfStock
                         ? `<span class="prod-stock-zero">Esgotado</span>`
-                        : `<button class="btn-add" id="btn-${p.id}" onclick="addToCart(${p.id})">
+                        : `<button class="btn-add" id="btn-${p.id}"
+                               data-id="${p.id}"
+                               data-name="${p.name.replace(/"/g, '&quot;')}"
+                               data-store="${p.store_name.replace(/"/g, '&quot;')}"
+                               data-price="${p.price}"
+                               onclick="lojaAddToCart(this)">
                                <i class="fas fa-plus"></i> Adicionar
                            </button>`
                     }
@@ -240,86 +356,96 @@ function renderProducts() {
     }).join('');
 }
 
-// ══ CART ══
-function saveCart() { sessionStorage.setItem('vitrinni_cart', JSON.stringify(cart)); }
+// ══ CART — all writes go to sessionStorage, then re-render both sidebar + navbar ══
+function lojaAddToCart(btn) {
+    const id    = +btn.dataset.id;
+    const name  = btn.dataset.name;
+    const store = btn.dataset.store;
+    const price = +btn.dataset.price;
 
-function addToCart(productId) {
-    const product = allProducts.find(p => p.id === productId);
-    if (!product) return;
-    const existing = cart.find(i => i.id === productId);
+    let cart = getCartFromStorage();
+    const existing = cart.find(i => i.id === id);
     if (existing) existing.qty++;
-    else cart.push({ id: product.id, name: product.name, store_name: product.store_name, price: product.price, qty: 1 });
-    saveCart();
-    renderCart();
+    else cart.push({ id, name, store_name: store, price, qty: 1 });
+    saveCartToStorage(cart);
+
+    // update BOTH the sidebar and the navbar dropdown
+    renderSidebarCart();
+    if (typeof window._navbarRenderCart === 'function') window._navbarRenderCart();
+
     // flash button
-    const btn = document.getElementById(`btn-${productId}`);
-    if (btn) {
-        btn.innerHTML = '<i class="fas fa-check"></i> Adicionado';
-        btn.classList.add('added');
-        setTimeout(() => { btn.innerHTML = '<i class="fas fa-plus"></i> Adicionar'; btn.classList.remove('added'); }, 900);
-    }
+    btn.innerHTML = '<i class="fas fa-check"></i> Adicionado';
+    btn.classList.add('added');
+    setTimeout(() => {
+        btn.innerHTML = '<i class="fas fa-plus"></i> Adicionar';
+        btn.classList.remove('added');
+    }, 900);
 }
 
-function changeQty(productId, delta) {
-    const item = cart.find(i => i.id === productId);
+function lojaChangeQty(id, delta) {
+    let cart = getCartFromStorage();
+    const item = cart.find(i => i.id === id);
     if (!item) return;
     item.qty += delta;
-    if (item.qty <= 0) cart = cart.filter(i => i.id !== productId);
-    saveCart();
-    renderCart();
+    if (item.qty <= 0) cart = cart.filter(i => i.id !== id);
+    saveCartToStorage(cart);
+    renderSidebarCart();
+    if (typeof window._navbarRenderCart === 'function') window._navbarRenderCart();
 }
 
-function clearCart() { cart = []; saveCart(); renderCart(); }
-
-function cartInnerHTML() {
-    if (!cart.length) {
-        return `<div class="cart-empty">
-            <i class="fas fa-cart-arrow-down"></i>
-            <p>Seu carrinho está vazio.<br>Adicione produtos para começar.</p>
-        </div>`;
-    }
-    const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
-    const items = cart.map(i => `
-        <div class="cart-item">
-            <div class="cart-item-icon"><i class="${getIcon(i.name)}"></i></div>
-            <div class="cart-item-info">
-                <div class="cart-item-name">${i.name}</div>
-                <div class="cart-item-store">${i.store_name}</div>
-                <div class="cart-item-controls">
-                    <button class="qty-btn" onclick="changeQty(${i.id}, -1)">−</button>
-                    <span class="qty-val">${i.qty}</span>
-                    <button class="qty-btn" onclick="changeQty(${i.id}, 1)">+</button>
-                </div>
-            </div>
-            <div class="cart-item-price">${fmt(i.price * i.qty)}</div>
-        </div>`).join('');
-
-    return `
-        <div class="cart-items">${items}</div>
-        <hr class="cart-divider">
-        <div class="cart-total-row">
-            <span class="cart-total-label">Total</span>
-            <span class="cart-total-val">${fmt(total)}</span>
-        </div>
-        <button class="btn-buy" onclick="goToCheckout()">
-            <i class="fas fa-bolt"></i> Finalizar Compra
-        </button>
-        <button class="btn-clear" onclick="clearCart()">Limpar carrinho</button>`;
+function lojaClearCart() {
+    saveCartToStorage([]);
+    renderSidebarCart();
+    if (typeof window._navbarRenderCart === 'function') window._navbarRenderCart();
 }
 
-function renderCart() {
+function renderSidebarCart() {
+    const cart = getCartFromStorage();
     const totalItems = cart.reduce((s, i) => s + i.qty, 0);
-    const html = cartInnerHTML();
-    document.getElementById('cartContent').innerHTML = html;
-    document.getElementById('cartContentMobile').innerHTML = html;
-    document.getElementById('cartBadge').textContent = `${totalItems} ${totalItems === 1 ? 'item' : 'itens'}`;
-    document.getElementById('cartBadgeMobile').textContent = `${totalItems} ${totalItems === 1 ? 'item' : 'itens'}`;
-    document.getElementById('fabText').textContent = `Carrinho (${totalItems})`;
-}
 
-function goToCheckout() {
-    if (!cart.length) return;
-    window.location.href = '/finalizar.html';
+    const cartContent    = document.getElementById('cartContent');
+    const cartContentMob = document.getElementById('cartContentMobile');
+    const cartBadge      = document.getElementById('cartBadge');
+    const cartBadgeMob   = document.getElementById('cartBadgeMobile');
+    const fabText        = document.getElementById('fabText');
+
+    if (cartBadge)    cartBadge.textContent    = `${totalItems} ${totalItems === 1 ? 'item' : 'itens'}`;
+    if (cartBadgeMob) cartBadgeMob.textContent = `${totalItems} ${totalItems === 1 ? 'item' : 'itens'}`;
+    if (fabText)      fabText.textContent      = `Carrinho (${totalItems})`;
+
+    const html = cart.length === 0
+        ? `<div class="cart-empty">
+               <i class="fas fa-cart-arrow-down"></i>
+               <p>Seu carrinho está vazio.<br>Adicione produtos para começar.</p>
+           </div>`
+        : `<div class="cart-items">
+               ${cart.map(i => `
+               <div class="cart-item">
+                   <div class="cart-item-icon"><i class="${lojaGetIcon(i.name)}"></i></div>
+                   <div class="cart-item-info">
+                       <div class="cart-item-name">${i.name}</div>
+                       <div class="cart-item-store">${i.store_name}</div>
+                       <div class="cart-item-controls">
+                           <button class="qty-btn" onclick="lojaChangeQty(${i.id}, -1)">−</button>
+                           <span class="qty-val">${i.qty}</span>
+                           <button class="qty-btn" onclick="lojaChangeQty(${i.id}, 1)">+</button>
+                       </div>
+                   </div>
+                   <div class="cart-item-price">${fmt(i.price * i.qty)}</div>
+               </div>`).join('')}
+           </div>
+           <hr class="cart-divider">
+           <div class="cart-total-row">
+               <span class="cart-total-label">Total</span>
+               <span class="cart-total-val">${fmt(cart.reduce((s,i) => s + i.price*i.qty, 0))}</span>
+           </div>
+           <button class="btn-buy" onclick="window.location.href='/finalizar.html'">
+               <i class="fas fa-bolt"></i> Finalizar Compra
+           </button>
+           <button class="btn-clear" onclick="lojaClearCart()">Limpar carrinho</button>`;
+
+    if (cartContent)    cartContent.innerHTML    = html;
+    if (cartContentMob) cartContentMob.innerHTML = html;
 }
 
 // ══ DRAWER ══
@@ -337,14 +463,11 @@ function closeDrawer() {
 // ══ SEARCH ══
 document.getElementById('shopSearch').addEventListener('input', e => { searchTerm = e.target.value; renderProducts(); });
 document.querySelector('.shop-search-btn').addEventListener('click', () => { searchTerm = document.getElementById('shopSearch').value; renderProducts(); });
-document.getElementById('navSearch').addEventListener('keydown', e => {
-    if (e.key === 'Enter') { searchTerm = e.target.value; document.getElementById('shopSearch').value = searchTerm; renderProducts(); }
-});
 document.querySelector('.chip[data-store="all"]').addEventListener('click', () => setStore('all'));
 
 // ══ INIT ══
 loadProducts();
-renderCart();
 </script>
+<script src="{{ url_for('static', filename='navbar.js') }}"></script>
 </body>
 </html>

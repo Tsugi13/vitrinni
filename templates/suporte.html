@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vitrinni · Suporte</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='suporte.css') }}">
+    <!-- navbar dropdown styles -->
+    <style>
+        .user-menu { display: flex; align-items: center; gap: 4px; }
+        .login-link.logged-in { background: #f0faf0; border-color: #b2dfdb; color: #1b5e20; cursor: default; }
+        .menu-wrapper, .carrinho-wrapper { position: relative; }
+        .menu-dropdown {
+            display: none; position: absolute; right: 0; top: calc(100% + 10px);
+            width: 220px; background: white; border-radius: 18px;
+            border: 1px solid #efe4d8; box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+            z-index: 2000; overflow: hidden; animation: dropIn 0.18s ease;
+        }
+        .menu-dropdown.open { display: block; }
+        .menu-dropdown a, .menu-dropdown button {
+            display: flex; align-items: center; gap: 10px;
+            width: 100%; padding: 0.85rem 1.2rem;
+            font-size: 0.88rem; font-weight: 600; color: #332211;
+            text-decoration: none; background: none; border: none;
+            cursor: pointer; font-family: 'Inter', sans-serif;
+            transition: background 0.15s; text-align: left;
+        }
+        .menu-dropdown a:hover, .menu-dropdown button:hover { background: #faf5ef; }
+        .menu-dropdown a i, .menu-dropdown button i { width: 16px; color: #8b775e; }
+        .menu-dropdown .menu-divider { border: none; border-top: 1px solid #f0e9e0; margin: 0.2rem 0; }
+        .menu-dropdown .danger { color: #b91c1c; }
+        .menu-dropdown .danger i { color: #b91c1c; }
+        .menu-dropdown .danger:hover { background: #fff5f5; }
+        .cart-count-badge {
+            background: #F9A825; color: #2c1c0c; font-size: 0.6rem;
+            font-weight: 800; border-radius: 30px; padding: 0.1rem 0.45rem;
+            margin-left: 2px; vertical-align: middle;
+        }
+        .cart-dropdown {
+            display: none; position: absolute; right: 0; top: calc(100% + 10px);
+            width: 320px; background: white; border-radius: 20px;
+            border: 1px solid #efe4d8; box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+            z-index: 2000; overflow: hidden; animation: dropIn 0.18s ease;
+        }
+        .cart-dropdown.open { display: block; }
+        @keyframes dropIn {
+            from { opacity:0; transform:translateY(-8px); }
+            to   { opacity:1; transform:translateY(0); }
+        }
+        .cart-dropdown-header { display:flex; justify-content:space-between; align-items:center; padding:1rem 1.2rem 0.8rem; border-bottom:1px solid #f0e9e0; }
+        .cart-dropdown-title { font-size:0.95rem; font-weight:800; color:#1a1a1a; }
+        .cart-dropdown-link { font-size:0.78rem; font-weight:600; color:#000; text-decoration:none; }
+        .cart-dropdown-link:hover { text-decoration:underline; }
+        .cart-dropdown-items { max-height:280px; overflow-y:auto; padding:0.6rem 1.2rem; }
+        .cart-dropdown-items::-webkit-scrollbar { width:3px; }
+        .cart-dropdown-items::-webkit-scrollbar-thumb { background:#e0d5c8; border-radius:3px; }
+        .cart-dropdown-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:1.5rem 0; color:#b0997f; text-align:center; gap:0.4rem; }
+        .cart-dropdown-empty i { font-size:1.8rem; opacity:0.4; }
+        .cart-dropdown-empty p { font-size:0.82rem; }
+        .cart-drop-item { display:flex; align-items:center; gap:0.7rem; padding:0.55rem 0; border-bottom:1px solid #f5f0eb; }
+        .cart-drop-item:last-child { border-bottom:none; }
+        .cart-drop-icon { width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg,#2c2c2c,#1a1a1a); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .cart-drop-icon i { color:#F9A825; font-size:0.95rem; }
+        .cart-drop-info { flex:1; min-width:0; }
+        .cart-drop-name { font-size:0.8rem; font-weight:700; color:#1a1a1a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .cart-drop-qty { font-size:0.7rem; color:#8b775e; }
+        .cart-drop-price { font-size:0.82rem; font-weight:800; color:#000; white-space:nowrap; }
+        .cart-dropdown-footer { padding:0.8rem 1.2rem 1rem; border-top:1px solid #f0e9e0; background:#fefaf5; }
+        .cart-dropdown-total { display:flex; justify-content:space-between; font-size:0.9rem; font-weight:800; color:#1a1a1a; margin-bottom:0.8rem; }
+        .cart-dropdown-btn { display:block; background:#000; color:white; text-align:center; text-decoration:none; padding:0.7rem; border-radius:40px; font-size:0.85rem; font-weight:700; transition:background 0.2s; }
+        .cart-dropdown-btn:hover { background:#333; }
+    </style>
+</head>
+<body>
+
+<!-- ══ NAVBAR ══ -->
+<nav class="navbar">
+    <div class="nav-container">
+        <div class="brand-area">
+            <a href="/" class="logo">
+                <img src="https://i.gyazo.com/fad9d8fb6ce81b4a456139e5c56d25f7.png" alt="Vitrinni" class="logo-img">
+            </a>
+        </div>
+        <div class="nav-actions">
+            <div class="language-selector">
+                <i class="fas fa-globe-americas"></i>
+                <span>PT · BR</span>
+                <i class="fas fa-chevron-down" style="font-size:0.7rem;opacity:0.7;"></i>
+            </div>
+            <div class="search-wrapper">
+                <input type="text" class="search-input" placeholder="Buscar arte marcial, academia, produto...">
+                <button class="search-btn"><i class="fas fa-search"></i></button>
+            </div>
+            <div class="menu-section">
+                {% if user %}
+                <a class="login-link logged-in">
+                    <i class="fas fa-user-circle"></i>
+                    <span>{{ user.name.split()[0] }}</span>
+                </a>
+                {% else %}
+                <a href="/login.html" class="login-link">
+                    <i class="fas fa-user-circle"></i>
+                    <span>Fazer login</span>
+                </a>
+                {% endif %}
+
+                <!-- menu dropdown -->
+                <div class="menu-wrapper" id="menuWrapper">
+                    <div class="menu-icon" onclick="toggleMenuDropdown()">
+                        <i class="fas fa-bars"></i>
+                        <span>Menu</span>
+                    </div>
+                    <div class="menu-dropdown" id="menuDropdown">
+                        <a href="/loja.html"><i class="fas fa-store"></i> Loja</a>
+                        <a href="/suporte.html"><i class="fas fa-life-ring"></i> Suporte</a>
+                        <hr class="menu-divider">
+                        {% if user %}
+                        <button class="danger" onclick="window.location.href='/logout'">
+                            <i class="fas fa-sign-out-alt"></i> Sair
+                        </button>
+                        {% else %}
+                        <a href="/login.html"><i class="fas fa-sign-in-alt"></i> Entrar</a>
+                        <a href="/cadastro.html"><i class="fas fa-user-plus"></i> Cadastrar</a>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- cart dropdown -->
+                <div class="carrinho-wrapper" id="carrinhoWrapper">
+                    <div class="carrinho-icon" onclick="toggleCartDropdown()">
+                        <i class="fa-solid fa-cart-arrow-down"></i>
+                        <span>Carrinho</span>
+                        <span class="cart-count-badge" id="cartCountBadge" style="display:none;"></span>
+                    </div>
+                    <div class="cart-dropdown" id="cartDropdown">
+                        <div class="cart-dropdown-header">
+                            <span class="cart-dropdown-title">Carrinho</span>
+                            <a href="/loja.html" class="cart-dropdown-link">Ir para a loja →</a>
+                        </div>
+                        <div class="cart-dropdown-items" id="cartDropdownItems">
+                            <div class="cart-dropdown-empty">
+                                <i class="fas fa-cart-arrow-down"></i>
+                                <p>Carrinho vazio</p>
+                            </div>
+                        </div>
+                        <div class="cart-dropdown-footer" id="cartDropdownFooter" style="display:none;">
+                            <div class="cart-dropdown-total">
+                                <span>Total</span>
+                                <span id="cartDropdownTotal">R$ 0,00</span>
+                            </div>
+                            <a href="/finalizar.html" class="cart-dropdown-btn">Finalizar Compra</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- ══ PAGE CONTENT ══ -->
+<main class="suporte-main">
+
+    <!-- Hero -->
+    <div class="suporte-hero">
+        <div class="suporte-hero-icon"><i class="fas fa-life-ring"></i></div>
+        <h1>Central de Suporte</h1>
+        <p>Estamos aqui para ajudar. Fale com a nossa equipe ou consulte as dúvidas frequentes.</p>
+    </div>
+
+    <!-- Contact cards -->
+    <div class="contact-grid">
+        <a href="tel:+551140028922" class="contact-card">
+            <div class="contact-icon phone"><i class="fas fa-phone-alt"></i></div>
+            <div class="contact-info">
+                <div class="contact-label">Telefone</div>
+                <div class="contact-value">+55 (11) 4002-8922</div>
+                <div class="contact-hours">Seg–Sex · 9h às 18h</div>
+            </div>
+        </a>
+        <a href="mailto:suporte@vitrinni.com.br" class="contact-card">
+            <div class="contact-icon email"><i class="fas fa-envelope"></i></div>
+            <div class="contact-info">
+                <div class="contact-label">E-mail</div>
+                <div class="contact-value">suporte@vitrinni.com.br</div>
+                <div class="contact-hours">Respondemos em até 24h</div>
+            </div>
+        </a>
+        <div class="contact-card">
+            <div class="contact-icon chat"><i class="fas fa-comments"></i></div>
+            <div class="contact-info">
+                <div class="contact-label">Chat ao vivo</div>
+                <div class="contact-value">Em breve</div>
+                <div class="contact-hours">Disponível em breve</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- About section (from README) -->
+    <div class="about-section">
+        <div class="about-card">
+            <h2><i class="fas fa-store" style="color:#F9A825;margin-right:8px;"></i>Sobre a Vitrinni</h2>
+            <p>
+                A <strong>Vitrinni</strong> é uma plataforma dedicada ao universo das artes marciais.
+                Aqui você encontra produtos de qualidade para o seu treino — kimonos, luvas, capacetes,
+                tatames e muito mais — além de poder se conectar com academias locais da sua região.
+            </p>
+            <p>
+                Nossa missão é reunir em um só lugar tudo o que um praticante de artes marciais precisa:
+                desde o equipamento certo para começar até os produtos mais avançados para atletas experientes.
+            </p>
+
+            <div class="features-grid">
+                <div class="feature-item">
+                    <i class="fas fa-shield-alt"></i>
+                    <span>Criptografia de dados</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-headset"></i>
+                    <span>Área de suporte</span>
+                </div>
+                <div class="feature-item">
+                    <i class="fas fa-store"></i>
+                    <span>Cadastro de lojas</span>
+                </div>
+                <div class="feature-item coming-soon">
+                    <i class="fas fa-gamepad"></i>
+                    <span>Gamificação <em>(em breve)</em></span>
+                </div>
+                <div class="feature-item coming-soon">
+                    <i class="fas fa-tags"></i>
+                    <span>Sistema de cupons <em>(em breve)</em></span>
+                </div>
+                <div class="feature-item coming-soon">
+                    <i class="fas fa-crown"></i>
+                    <span>Assinaturas <em>(em breve)</em></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAQ -->
+    <div class="faq-section">
+        <h2>Dúvidas frequentes</h2>
+        <div class="faq-list">
+            <div class="faq-item">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    <span>Como faço para criar uma conta?</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="faq-a">
+                    Clique em <strong>Fazer login</strong> no canto superior direito e depois em <strong>Cadastre-se</strong>.
+                    Preencha nome, e-mail, telefone e senha — pronto!
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    <span>Como funciona o carrinho?</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="faq-a">
+                    Navegue pela loja, clique em <strong>Adicionar</strong> nos produtos desejados e acesse o carrinho
+                    clicando no ícone no topo da página. De lá você pode ajustar quantidades e finalizar a compra.
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    <span>Quais formas de pagamento são aceitas?</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="faq-a">
+                    Aceitamos cartão de crédito, cartão de débito, Pix e boleto bancário.
+                    O frete é grátis em compras acima de R$ 300,00.
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    <span>Como cadastrar minha loja ou academia?</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="faq-a">
+                    Entre em contato com nossa equipe pelo e-mail <strong>suporte@vitrinni.com.br</strong> ou
+                    pelo telefone <strong>+55 (11) 4002-8922</strong>. Nossa equipe irá guiar você no processo
+                    de cadastro da sua loja na plataforma.
+                </div>
+            </div>
+            <div class="faq-item">
+                <button class="faq-q" onclick="toggleFaq(this)">
+                    <span>Minha senha está segura?</span>
+                    <i class="fas fa-chevron-down"></i>
+                </button>
+                <div class="faq-a">
+                    Sim. Todas as senhas são armazenadas com criptografia SHA-256 e salt aleatório —
+                    nunca em texto simples. Seus dados estão protegidos.
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <hr>
+    <div class="footer-note">🥊 VITRINNI — Encontre sua academia ideal e os melhores equipamentos para seu treino.</div>
+</main>
+
+<script>
+function toggleFaq(btn) {
+    const item = btn.closest('.faq-item');
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
+}
+
+/* ── menu dropdown ── */
+window.toggleMenuDropdown = function() {
+    const dd = document.getElementById('menuDropdown');
+    document.getElementById('cartDropdown').classList.remove('open');
+    dd.classList.toggle('open');
+};
+
+/* ── cart dropdown ── */
+const iconMap = [
+    [/luva|boxe|sparring/i,'fas fa-mitten'],[/kimono|judogi|dobok|uniforme/i,'fas fa-tshirt'],
+    [/faixa/i,'fas fa-ribbon'],[/caneleira/i,'fas fa-shoe-prints'],[/capacete/i,'fas fa-hard-hat'],
+    [/bandagem/i,'fas fa-band-aid'],[/rashguard|shorts/i,'fas fa-running'],[/tatame/i,'fas fa-border-all'],
+    [/protetor|joelheira/i,'fas fa-shield-alt'],[/bolsa|bag/i,'fas fa-shopping-bag'],
+];
+function getIcon(name) { for (const [re,i] of iconMap) if (re.test(name)) return i; return 'fas fa-fist-raised'; }
+function fmt(v) { return v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
+function getCart() { return JSON.parse(sessionStorage.getItem('vitrinni_cart')||'[]'); }
+
+function renderCartDropdown() {
+    const cart=getCart(), badge=document.getElementById('cartCountBadge');
+    const itemsEl=document.getElementById('cartDropdownItems'), footerEl=document.getElementById('cartDropdownFooter');
+    const totalQty=cart.reduce((s,i)=>s+i.qty,0);
+    badge.textContent=totalQty; badge.style.display=totalQty>0?'inline':'none';
+    if (!cart.length) { itemsEl.innerHTML=`<div class="cart-dropdown-empty"><i class="fas fa-cart-arrow-down"></i><p>Carrinho vazio</p></div>`; footerEl.style.display='none'; return; }
+    const total=cart.reduce((s,i)=>s+i.price*i.qty,0);
+    itemsEl.innerHTML=cart.map(i=>`<div class="cart-drop-item"><div class="cart-drop-icon"><i class="${getIcon(i.name)}"></i></div><div class="cart-drop-info"><div class="cart-drop-name">${i.name}</div><div class="cart-drop-qty">x${i.qty} · ${i.store_name}</div></div><div class="cart-drop-price">${fmt(i.price*i.qty)}</div></div>`).join('');
+    document.getElementById('cartDropdownTotal').textContent=fmt(total); footerEl.style.display='block';
+}
+window.toggleCartDropdown = function() {
+    const dd=document.getElementById('cartDropdown');
+    document.getElementById('menuDropdown').classList.remove('open');
+    dd.classList.toggle('open');
+    if (dd.classList.contains('open')) renderCartDropdown();
+};
+document.addEventListener('click', function(e) {
+    if (!document.getElementById('carrinhoWrapper').contains(e.target)) document.getElementById('cartDropdown').classList.remove('open');
+    if (!document.getElementById('menuWrapper').contains(e.target)) document.getElementById('menuDropdown').classList.remove('open');
+});
+renderCartDropdown();
+</script>
+
+<script src="{{ url_for('static', filename='navbar.js') }}"></script>
+</body>
+</html>

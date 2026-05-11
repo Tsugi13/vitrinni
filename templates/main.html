@@ -9,17 +9,70 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='main.css') }}">
+    <!-- navbar dropdown styles -->
     <style>
         .user-menu { display: flex; align-items: center; gap: 4px; }
         .login-link.logged-in { background: #f0faf0; border-color: #b2dfdb; color: #1b5e20; cursor: default; }
-        .logout-link {
-            display: flex; align-items: center; justify-content: center;
-            width: 34px; height: 34px; border-radius: 50%;
-            color: #666; font-size: 0.9rem;
-            transition: background 0.2s, color 0.2s;
-            text-decoration: none;
+        .menu-wrapper, .carrinho-wrapper { position: relative; }
+        .menu-dropdown {
+            display: none; position: absolute; right: 0; top: calc(100% + 10px);
+            width: 220px; background: white; border-radius: 18px;
+            border: 1px solid #efe4d8; box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+            z-index: 2000; overflow: hidden; animation: dropIn 0.18s ease;
         }
-        .logout-link:hover { background: #fee2e2; color: #b91c1c; }
+        .menu-dropdown.open { display: block; }
+        .menu-dropdown a, .menu-dropdown button {
+            display: flex; align-items: center; gap: 10px;
+            width: 100%; padding: 0.85rem 1.2rem;
+            font-size: 0.88rem; font-weight: 600; color: #332211;
+            text-decoration: none; background: none; border: none;
+            cursor: pointer; font-family: 'Inter', sans-serif;
+            transition: background 0.15s; text-align: left;
+        }
+        .menu-dropdown a:hover, .menu-dropdown button:hover { background: #faf5ef; }
+        .menu-dropdown a i, .menu-dropdown button i { width: 16px; color: #8b775e; }
+        .menu-dropdown .menu-divider { border: none; border-top: 1px solid #f0e9e0; margin: 0.2rem 0; }
+        .menu-dropdown .danger { color: #b91c1c; }
+        .menu-dropdown .danger i { color: #b91c1c; }
+        .menu-dropdown .danger:hover { background: #fff5f5; }
+        .cart-count-badge {
+            background: #F9A825; color: #2c1c0c; font-size: 0.6rem;
+            font-weight: 800; border-radius: 30px; padding: 0.1rem 0.45rem;
+            margin-left: 2px; vertical-align: middle;
+        }
+        .cart-dropdown {
+            display: none; position: absolute; right: 0; top: calc(100% + 10px);
+            width: 320px; background: white; border-radius: 20px;
+            border: 1px solid #efe4d8; box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+            z-index: 2000; overflow: hidden; animation: dropIn 0.18s ease;
+        }
+        .cart-dropdown.open { display: block; }
+        @keyframes dropIn {
+            from { opacity:0; transform:translateY(-8px); }
+            to   { opacity:1; transform:translateY(0); }
+        }
+        .cart-dropdown-header { display:flex; justify-content:space-between; align-items:center; padding:1rem 1.2rem 0.8rem; border-bottom:1px solid #f0e9e0; }
+        .cart-dropdown-title { font-size:0.95rem; font-weight:800; color:#1a1a1a; }
+        .cart-dropdown-link { font-size:0.78rem; font-weight:600; color:#000; text-decoration:none; }
+        .cart-dropdown-link:hover { text-decoration:underline; }
+        .cart-dropdown-items { max-height:280px; overflow-y:auto; padding:0.6rem 1.2rem; }
+        .cart-dropdown-items::-webkit-scrollbar { width:3px; }
+        .cart-dropdown-items::-webkit-scrollbar-thumb { background:#e0d5c8; border-radius:3px; }
+        .cart-dropdown-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; padding:1.5rem 0; color:#b0997f; text-align:center; gap:0.4rem; }
+        .cart-dropdown-empty i { font-size:1.8rem; opacity:0.4; }
+        .cart-dropdown-empty p { font-size:0.82rem; }
+        .cart-drop-item { display:flex; align-items:center; gap:0.7rem; padding:0.55rem 0; border-bottom:1px solid #f5f0eb; }
+        .cart-drop-item:last-child { border-bottom:none; }
+        .cart-drop-icon { width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg,#2c2c2c,#1a1a1a); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .cart-drop-icon i { color:#F9A825; font-size:0.95rem; }
+        .cart-drop-info { flex:1; min-width:0; }
+        .cart-drop-name { font-size:0.8rem; font-weight:700; color:#1a1a1a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .cart-drop-qty { font-size:0.7rem; color:#8b775e; }
+        .cart-drop-price { font-size:0.82rem; font-weight:800; color:#000; white-space:nowrap; }
+        .cart-dropdown-footer { padding:0.8rem 1.2rem 1rem; border-top:1px solid #f0e9e0; background:#fefaf5; }
+        .cart-dropdown-total { display:flex; justify-content:space-between; font-size:0.9rem; font-weight:800; color:#1a1a1a; margin-bottom:0.8rem; }
+        .cart-dropdown-btn { display:block; background:#000; color:white; text-align:center; text-decoration:none; padding:0.7rem; border-radius:40px; font-size:0.85rem; font-weight:700; transition:background 0.2s; }
+        .cart-dropdown-btn:hover { background:#333; }
     </style>
 </head>
 <body>
@@ -27,49 +80,57 @@
 <nav class="navbar">
     <div class="nav-container">
         <div class="brand-area">
-            <a href="main.html" class="logo">
+            <a href="/" class="logo">
                 <img src="https://i.gyazo.com/fad9d8fb6ce81b4a456139e5c56d25f7.png" alt="Vitrinni" class="logo-img">
             </a>
         </div>
-
         <div class="nav-actions">
-            <div class="language-selector" aria-label="Idioma atual português Brasil">
+            <div class="language-selector">
                 <i class="fas fa-globe-americas"></i>
                 <span>PT · BR</span>
-                <i class="fas fa-chevron-down" style="font-size: 0.7rem; opacity: 0.7;"></i>
+                <i class="fas fa-chevron-down" style="font-size:0.7rem;opacity:0.7;"></i>
             </div>
-
             <div class="search-wrapper">
-                <input type="text" class="search-input" placeholder="Buscar arte marcial, academia, produto..." aria-label="Campo de pesquisa">
-                <button class="search-btn" aria-label="Buscar">
-                    <i class="fas fa-search"></i>
-                </button>
+                <input type="text" class="search-input" placeholder="Buscar arte marcial, academia, produto...">
+                <button class="search-btn"><i class="fas fa-search"></i></button>
             </div>
-
             <div class="menu-section">
                 {% if user %}
-                <div class="user-menu">
-                    <a class="login-link logged-in" aria-label="Usuário logado">
-                        <i class="fas fa-user-circle"></i>
-                        <span>{{ user.name.split()[0] }}</span>
-                    </a>
-                    <a href="/logout" class="logout-link" title="Sair">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </a>
-                </div>
+                <a class="login-link logged-in">
+                    <i class="fas fa-user-circle"></i>
+                    <span>{{ user.name.split()[0] }}</span>
+                </a>
                 {% else %}
-                <a href="/login.html" class="login-link" aria-label="Fazer login">
+                <a href="/login.html" class="login-link">
                     <i class="fas fa-user-circle"></i>
                     <span>Fazer login</span>
                 </a>
                 {% endif %}
-                <div class="menu-icon" aria-label="Menu principal">
-                    <i class="fas fa-bars"></i>
-                    <span>Menu</span>
+
+                <!-- menu dropdown -->
+                <div class="menu-wrapper" id="menuWrapper">
+                    <div class="menu-icon" onclick="toggleMenuDropdown()">
+                        <i class="fas fa-bars"></i>
+                        <span>Menu</span>
+                    </div>
+                    <div class="menu-dropdown" id="menuDropdown">
+                        <a href="/loja.html"><i class="fas fa-store"></i> Loja</a>
+                        <a href="/suporte.html"><i class="fas fa-life-ring"></i> Suporte</a>
+                        <hr class="menu-divider">
+                        {% if user %}
+                        <button class="danger" onclick="window.location.href='/logout'">
+                            <i class="fas fa-sign-out-alt"></i> Sair
+                        </button>
+                        {% else %}
+                        <a href="/login.html"><i class="fas fa-sign-in-alt"></i> Entrar</a>
+                        <a href="/cadastro.html"><i class="fas fa-user-plus"></i> Cadastrar</a>
+                        {% endif %}
+                    </div>
                 </div>
 
+                <!-- cart dropdown -->
                 <div class="carrinho-wrapper" id="carrinhoWrapper">
-                    <div class="carrinho-icon" id="carrinhoToggle" onclick="toggleCartDropdown()">
+                    <div class="carrinho-icon" onclick="toggleCartDropdown()">
                         <i class="fa-solid fa-cart-arrow-down"></i>
                         <span>Carrinho</span>
                         <span class="cart-count-badge" id="cartCountBadge" style="display:none;"></span>
@@ -105,7 +166,7 @@
         <p class="hero-sub">Encontre o estilo perfeito perto de você e equipe-se com os melhores produtos.</p>
     </div>
 
-    <!-- estilos de luta no começo da pag -->
+    <!-- estilos de luta -->
     <div class="card-grid">
         <div class="martial-card" id="cardJudo">
             <i class="fas fa-fist-raised"></i>
@@ -127,95 +188,17 @@
         </div>
     </div>
 
-    <!-- imagens dos produtos em destaque -->
+    <!-- produtos em destaque — carregados do banco -->
     <div class="featured-products">
         <div class="products-header">
             <h2>Produtos em destaque</h2>
-            <a href="/loja.html" class="ver-todos" id="verTodosProdutos" style="text-decoration:none;">Ver todos →</a>
+            <a href="/loja.html" class="ver-todos" style="text-decoration:none;">Ver todos →</a>
         </div>
 
-        <!-- card slide dos produtos em destaque -->
         <div class="products-slideshow-container">
             <div class="slideshow-track" id="slideshowTrack">
-                <div class="product-slide">
-                    <div class="product-card">
-                        <div class="product-img"><img src="https://i.gyazo.com/db562714f61e5882ec807531a4a8cc42.png" alt="Luva de Boxe Pro"></div>
-                        <div class="product-info">
-                            <h4>Luva de Boxe Pro</h4>
-                            <div class="product-category">Boxe</div>
-                            <div class="product-price">R$ 149,90</div>
-                            <button class="btn-product">Comprar</button>
-                        </div>
-                    </div>
-                    <div class="product-card">
-                        <div class="product-img"><img src="https://i.gyazo.com/5e140428c5ba0c0bffbd1f496977d5e6.png" alt="Capacete de Muay Thai"></div>
-                        <div class="product-info">
-                            <h4>Capacete de Muay Thai</h4>
-                            <div class="product-category">Muay Thai</div>
-                            <div class="product-price">R$ 209,90</div>
-                            <button class="btn-product">Comprar</button>
-                        </div>
-                    </div>
-                    <div class="product-card">
-                        <div class="product-img"><img src="https://i.gyazo.com/1a74d9ebabbef241109781e5b8009700.png" alt="Kimono Jiu-Jitsu"></div>
-                        <div class="product-info">
-                            <h4>Kimono</h4>
-                            <div class="product-category">Jiu-Jitsu</div>
-                            <div class="product-price">R$ 249,90</div>
-                            <button class="btn-product">Comprar</button>
-                        </div>
-                    </div>
-                    <div class="product-card">
-                        <div class="product-img"><img src="https://i.gyazo.com/a4efdb98a4e654638034a18f93d244c5.png" alt="Caneleira Muay Thai"></div>
-                        <div class="product-info">
-                            <h4>Caneleira</h4>
-                            <div class="product-category">Muay Thai</div>
-                            <div class="product-price">R$ 189,90</div>
-                            <button class="btn-product">Comprar</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="product-slide">
-                    <div class="product-card">
-                        <div class="product-img"><img src="https://i.gyazo.com/9258b3068f7d4bc493ab7c173152a665.png" alt="Cronômetro Tatame"></div>
-                        <div class="product-info">
-                            <h4>Cronômetro Tatame</h4>
-                            <div class="product-category">Timer Digital</div>
-                            <div class="product-price">R$ 99,90</div>
-                            <button class="btn-product">Comprar</button>
-                        </div>
-                    </div>
-                    <div class="product-card">
-                        <div class="product-img"><img src="https://i.gyazo.com/3fa8e7e83f31a8ac182abc4dfcc18630.png" alt="Faixa Preta Bordada"></div>
-                        <div class="product-info">
-                            <h4>Faixa Preta Bordada</h4>
-                            <div class="product-category">Jiu-Jitsu / Judô</div>
-                            <div class="product-price">R$ 89,90</div>
-                            <button class="btn-product">Comprar</button>
-                        </div>
-                    </div>
-                    <div class="product-card">
-                        <div class="product-img"><img src="https://i.gyazo.com/ece2c095f5e413fb22ecefa7a73a16a2.png" alt="Bastões de Treino"></div>
-                        <div class="product-info">
-                            <h4>Bastões de Treino</h4>
-                            <div class="product-category">Defesa Pessoal</div>
-                            <div class="product-price">R$ 49,90</div>
-                            <button class="btn-product">Comprar</button>
-                        </div>
-                    </div>
-                    <div class="product-card">
-                        <div class="product-img"><img src="https://i.gyazo.com/5e140428c5ba0c0bffbd1f496977d5e6.png" alt="Capacete de Muay Thai"></div>
-                        <div class="product-info">
-                            <h4>Capacete de Muay Thai</h4>
-                            <div class="product-category">Muay Thai</div>
-                            <div class="product-price">R$ 49,90</div>
-                            <button class="btn-product">Comprar</button>
-                        </div>
-                    </div>
-                </div>
+                <!-- slides injetados por JS -->
             </div>
-
-            <!-- navegacao do card slide -->
             <div class="slideshow-nav">
                 <button id="prevProductSlide"><i class="fas fa-chevron-left"></i></button>
                 <button id="nextProductSlide"><i class="fas fa-chevron-right"></i></button>
@@ -224,51 +207,51 @@
         </div>
     </div>
 
-    <!-- lista de academias em destaque -->
+    <!-- academias em destaque -->
     <div class="featured-section">
         <div class="section-header">
             <h2>Academias em destaque perto de você</h2>
-            <div class="ver-todos" id="verTodosLink">Ver todas →</div>
+            <div class="ver-todos">Ver todas →</div>
         </div>
         <div class="academy-list" id="academyList">
-            <div class="academy-item" data-modal="academy1">
+            <div class="academy-item">
                 <div class="academy-img"><i class="fas fa-shield-alt"></i></div>
                 <div class="academy-info">
                     <h4>Nome da academia 1</h4>
                     <span class="modalidade">Jiu-Jitsu Brasileiro</span>
                     <div class="rating">⭐ 4.9 (X avaliações)</div>
                     <div class="distance">📍 1.2km · Zona Sul</div>
-                    <button class="btn-call ver-mais-btn" data-nome="Nome da Academia 1">Ver horários</button>
+                    <button class="btn-call">Ver horários</button>
                 </div>
             </div>
-            <div class="academy-item" data-modal="academy2">
+            <div class="academy-item">
                 <div class="academy-img"><i class="fas fa-medal"></i></div>
                 <div class="academy-info">
                     <h4>Nome da academia 2</h4>
                     <span class="modalidade">Boxe Olímpico</span>
                     <div class="rating">⭐ 4.8 (X avaliações)</div>
                     <div class="distance">📍 0.8km · Centro</div>
-                    <button class="btn-call ver-mais-btn" data-nome="Nome da Academia 2">Ver horários</button>
+                    <button class="btn-call">Ver horários</button>
                 </div>
             </div>
-            <div class="academy-item" data-modal="academy3">
+            <div class="academy-item">
                 <div class="academy-img"><i class="fas fa-hand-peace"></i></div>
                 <div class="academy-info">
                     <h4>Nome da academia 3</h4>
                     <span class="modalidade">Taekwondo WT</span>
                     <div class="rating">⭐ 4.7 (X avaliações)</div>
                     <div class="distance">📍 2.1km · Norte</div>
-                    <button class="btn-call ver-mais-btn" data-nome="Nome da Academia 3">Ver horários</button>
+                    <button class="btn-call">Ver horários</button>
                 </div>
             </div>
-            <div class="academy-item" data-modal="academy4">
+            <div class="academy-item">
                 <div class="academy-img"><i class="fas fa-fist-raised"></i></div>
                 <div class="academy-info">
                     <h4>Nome da academia 4</h4>
                     <span class="modalidade">Krav Maga</span>
                     <div class="rating">⭐ 4.9 (X avaliações)</div>
                     <div class="distance">📍 1.5km · Leste</div>
-                    <button class="btn-call ver-mais-btn" data-nome="Nome da Academia 4">Ver horários</button>
+                    <button class="btn-call">Ver horários</button>
                 </div>
             </div>
         </div>
@@ -280,270 +263,219 @@
 </main>
 
 <script>
-    (function() {
-        // para card slide dos produtos em destaque
-        const track = document.getElementById('slideshowTrack');
-        const slides = document.querySelectorAll('.product-slide');
-        const totalSlides = slides.length;
-        let currentIndex = 0;
-
-        const prevBtn = document.getElementById('prevProductSlide');
-        const nextBtn = document.getElementById('nextProductSlide');
-        const dotsContainer = document.getElementById('productDots');
-
-        function updateSlideshow() {
-            if (!track) return;
-            const slideWidth = 100 / totalSlides;
-            track.style.transform = `translateX(-${currentIndex * slideWidth}%)`;
-            updateDots();
-        }
-
-        function updateDots() {
-            if (!dotsContainer) return;
-            dotsContainer.innerHTML = '';
-            for (let i = 0; i < totalSlides; i++) {
-                const dot = document.createElement('span');
-                dot.classList.add('dot');
-                if (i === currentIndex) dot.classList.add('active');
-                dot.addEventListener('click', () => {
-                    currentIndex = i;
-                    updateSlideshow();
-                });
-                dotsContainer.appendChild(dot);
-            }
-        }
-
-        if (prevBtn && nextBtn && totalSlides > 0) {
-            prevBtn.addEventListener('click', () => {
-                currentIndex = (currentIndex - 1 + totalSlides) % totalSlides;
-                updateSlideshow();
-            });
-            nextBtn.addEventListener('click', () => {
-                currentIndex = (currentIndex + 1) % totalSlides;
-                updateSlideshow();
-            });
-            updateSlideshow();
-        }
-    })();
-</script>
-
-<style>
-/* ── cart wrapper ── */
-.carrinho-wrapper {
-    position: relative;
+// ══════════════════════════════════════════════
+// ICON + FORMAT HELPERS (shared)
+// ══════════════════════════════════════════════
+const iconMap = [
+    [/luva|boxe|sparring/i,            'fas fa-mitten'],
+    [/kimono|judogi|dobok|uniforme/i,  'fas fa-tshirt'],
+    [/faixa/i,                         'fas fa-ribbon'],
+    [/caneleira/i,                     'fas fa-shoe-prints'],
+    [/capacete/i,                      'fas fa-hard-hat'],
+    [/bandagem/i,                      'fas fa-band-aid'],
+    [/rashguard|shorts/i,              'fas fa-running'],
+    [/tatame|tapete/i,                 'fas fa-border-all'],
+    [/saco.*pancada/i,                 'fas fa-circle'],
+    [/cronômetro|timer/i,              'fas fa-stopwatch'],
+    [/manequim/i,                      'fas fa-male'],
+    [/bastão/i,                        'fas fa-baseball-bat-ball'],
+    [/protetor.*bucal/i,               'fas fa-tooth'],
+    [/protetor|joelheira/i,            'fas fa-shield-alt'],
+    [/bolsa|bag/i,                     'fas fa-shopping-bag'],
+];
+function getIcon(name) {
+    for (const [re, icon] of iconMap) if (re.test(name)) return icon;
+    return 'fas fa-fist-raised';
+}
+function fmt(val) {
+    return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
-.cart-count-badge {
-    background: #F9A825;
-    color: #2c1c0c;
-    font-size: 0.6rem;
-    font-weight: 800;
-    border-radius: 30px;
-    padding: 0.1rem 0.45rem;
-    margin-left: 2px;
-    vertical-align: middle;
+// ══════════════════════════════════════════════
+// MENU DROPDOWN
+// ══════════════════════════════════════════════
+window.toggleMenuDropdown = function() {
+    const dd = document.getElementById('menuDropdown');
+    const cartDd = document.getElementById('cartDropdown');
+    cartDd.classList.remove('open');   // close cart if open
+    dd.classList.toggle('open');
+};
+
+// ══════════════════════════════════════════════
+// CART DROPDOWN
+// ══════════════════════════════════════════════
+function getCart() {
+    return JSON.parse(sessionStorage.getItem('vitrinni_cart') || '[]');
 }
 
-/* ── dropdown ── */
-.cart-dropdown {
-    display: none;
-    position: absolute;
-    right: 0;
-    top: calc(100% + 10px);
-    width: 320px;
-    background: white;
-    border-radius: 20px;
-    border: 1px solid #efe4d8;
-    box-shadow: 0 16px 40px rgba(0,0,0,0.12);
-    z-index: 2000;
-    overflow: hidden;
-    animation: dropIn 0.18s ease;
-}
-.cart-dropdown.open { display: block; }
+function renderCartDropdown() {
+    const cart = getCart();
+    const badge   = document.getElementById('cartCountBadge');
+    const itemsEl = document.getElementById('cartDropdownItems');
+    const footerEl = document.getElementById('cartDropdownFooter');
+    const totalEl  = document.getElementById('cartDropdownTotal');
 
-@keyframes dropIn {
-    from { opacity: 0; transform: translateY(-8px); }
-    to   { opacity: 1; transform: translateY(0); }
+    const totalQty = cart.reduce((s, i) => s + i.qty, 0);
+    badge.textContent = totalQty;
+    badge.style.display = totalQty > 0 ? 'inline' : 'none';
+
+    if (!cart.length) {
+        itemsEl.innerHTML = `<div class="cart-dropdown-empty">
+            <i class="fas fa-cart-arrow-down"></i><p>Carrinho vazio</p>
+        </div>`;
+        footerEl.style.display = 'none';
+        return;
+    }
+
+    const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
+    itemsEl.innerHTML = cart.map(i => `
+        <div class="cart-drop-item">
+            <div class="cart-drop-icon"><i class="${getIcon(i.name)}"></i></div>
+            <div class="cart-drop-info">
+                <div class="cart-drop-name">${i.name}</div>
+                <div class="cart-drop-qty">x${i.qty} · ${i.store_name}</div>
+            </div>
+            <div class="cart-drop-price">${fmt(i.price * i.qty)}</div>
+        </div>`).join('');
+
+    totalEl.textContent = fmt(total);
+    footerEl.style.display = 'block';
 }
 
-.cart-dropdown-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 1rem 1.2rem 0.8rem;
-    border-bottom: 1px solid #f0e9e0;
-}
-.cart-dropdown-title {
-    font-size: 0.95rem;
-    font-weight: 800;
-    color: #1a1a1a;
-}
-.cart-dropdown-link {
-    font-size: 0.78rem;
-    font-weight: 600;
-    color: #000;
-    text-decoration: none;
-}
-.cart-dropdown-link:hover { text-decoration: underline; }
+window.toggleCartDropdown = function() {
+    const dd = document.getElementById('cartDropdown');
+    const menuDd = document.getElementById('menuDropdown');
+    menuDd.classList.remove('open');   // close menu if open
+    dd.classList.toggle('open');
+    if (dd.classList.contains('open')) renderCartDropdown();
+};
 
-.cart-dropdown-items {
-    max-height: 280px;
-    overflow-y: auto;
-    padding: 0.6rem 1.2rem;
-}
-.cart-dropdown-items::-webkit-scrollbar { width: 3px; }
-.cart-dropdown-items::-webkit-scrollbar-thumb { background: #e0d5c8; border-radius: 3px; }
+// close both dropdowns on outside click
+document.addEventListener('click', function(e) {
+    const cartWrap = document.getElementById('carrinhoWrapper');
+    const menuWrap = document.getElementById('menuWrapper');
+    if (cartWrap && !cartWrap.contains(e.target))
+        document.getElementById('cartDropdown').classList.remove('open');
+    if (menuWrap && !menuWrap.contains(e.target))
+        document.getElementById('menuDropdown').classList.remove('open');
+});
 
-.cart-dropdown-empty {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 1.5rem 0;
-    color: #b0997f;
-    text-align: center;
-    gap: 0.4rem;
-}
-.cart-dropdown-empty i { font-size: 1.8rem; opacity: 0.4; }
-.cart-dropdown-empty p { font-size: 0.82rem; }
-
-.cart-drop-item {
-    display: flex;
-    align-items: center;
-    gap: 0.7rem;
-    padding: 0.55rem 0;
-    border-bottom: 1px solid #f5f0eb;
-}
-.cart-drop-item:last-child { border-bottom: none; }
-.cart-drop-icon {
-    width: 36px; height: 36px; border-radius: 10px;
-    background: linear-gradient(135deg, #2c2c2c, #1a1a1a);
-    display: flex; align-items: center; justify-content: center;
-    flex-shrink: 0;
-}
-.cart-drop-icon i { color: #F9A825; font-size: 0.95rem; }
-.cart-drop-info { flex: 1; min-width: 0; }
-.cart-drop-name {
-    font-size: 0.8rem; font-weight: 700; color: #1a1a1a;
-    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.cart-drop-qty { font-size: 0.7rem; color: #8b775e; }
-.cart-drop-price { font-size: 0.82rem; font-weight: 800; color: #000; white-space: nowrap; }
-
-.cart-dropdown-footer {
-    padding: 0.8rem 1.2rem 1rem;
-    border-top: 1px solid #f0e9e0;
-    background: #fefaf5;
-}
-.cart-dropdown-total {
-    display: flex;
-    justify-content: space-between;
-    font-size: 0.9rem;
-    font-weight: 800;
-    color: #1a1a1a;
-    margin-bottom: 0.8rem;
-}
-.cart-dropdown-btn {
-    display: block;
-    background: #000; color: white;
-    text-align: center; text-decoration: none;
-    padding: 0.7rem; border-radius: 40px;
-    font-size: 0.85rem; font-weight: 700;
-    transition: background 0.2s;
-}
-.cart-dropdown-btn:hover { background: #333; }
-</style>
-
-<script>
-(function() {
-    const iconMap = [
-        [/luva|boxe|sparring/i,           'fas fa-mitten'],
-        [/kimono|judogi|dobok|uniforme/i, 'fas fa-tshirt'],
-        [/faixa/i,                        'fas fa-ribbon'],
-        [/caneleira/i,                    'fas fa-shoe-prints'],
-        [/capacete/i,                     'fas fa-hard-hat'],
-        [/bandagem/i,                     'fas fa-band-aid'],
-        [/rashguard|shorts/i,             'fas fa-running'],
-        [/tatame|tapete/i,                'fas fa-border-all'],
-        [/saco.*pancada/i,                'fas fa-circle'],
-        [/cronômetro|timer/i,             'fas fa-stopwatch'],
-        [/manequim/i,                     'fas fa-male'],
-        [/bastão/i,                       'fas fa-baseball-bat-ball'],
-        [/protetor.*bucal/i,              'fas fa-tooth'],
-        [/protetor|joelheira/i,           'fas fa-shield-alt'],
-        [/bolsa|bag/i,                    'fas fa-shopping-bag'],
+// ══════════════════════════════════════════════
+// FEATURED PRODUCTS SLIDESHOW — from DB
+// ══════════════════════════════════════════════
+(async function loadFeatured() {
+    // Image map: product name keywords → Gyazo image URL from original design
+    const imageMap = [
+        [/luva|boxe|sparring/i,           'https://i.gyazo.com/db562714f61e5882ec807531a4a8cc42.png'],
+        [/capacete/i,                     'https://i.gyazo.com/5e140428c5ba0c0bffbd1f496977d5e6.png'],
+        [/kimono|judogi|dobok|uniforme/i, 'https://i.gyazo.com/1a74d9ebabbef241109781e5b8009700.png'],
+        [/caneleira/i,                    'https://i.gyazo.com/a4efdb98a4e654638034a18f93d244c5.png'],
+        [/cronômetro|timer/i,             'https://i.gyazo.com/9258b3068f7d4bc493ab7c173152a665.png'],
+        [/faixa/i,                        'https://i.gyazo.com/3fa8e7e83f31a8ac182abc4dfcc18630.png'],
+        [/bastão/i,                       'https://i.gyazo.com/ece2c095f5e413fb22ecefa7a73a16a2.png'],
+        [/rashguard|shorts/i,             'https://i.gyazo.com/db562714f61e5882ec807531a4a8cc42.png'],
+        [/bandagem/i,                     'https://i.gyazo.com/db562714f61e5882ec807531a4a8cc42.png'],
+        [/tatame/i,                       'https://i.gyazo.com/9258b3068f7d4bc493ab7c173152a665.png'],
+        [/protetor.*bucal/i,              'https://i.gyazo.com/a4efdb98a4e654638034a18f93d244c5.png'],
+        [/protetor|joelheira/i,           'https://i.gyazo.com/a4efdb98a4e654638034a18f93d244c5.png'],
+        [/bolsa|bag/i,                    'https://i.gyazo.com/3fa8e7e83f31a8ac182abc4dfcc18630.png'],
+        [/colete/i,                       'https://i.gyazo.com/1a74d9ebabbef241109781e5b8009700.png'],
+        [/manequim/i,                     'https://i.gyazo.com/ece2c095f5e413fb22ecefa7a73a16a2.png'],
+        [/espelho/i,                      'https://i.gyazo.com/9258b3068f7d4bc493ab7c173152a665.png'],
     ];
-    function getIcon(name) {
-        for (const [re, icon] of iconMap) if (re.test(name)) return icon;
-        return 'fas fa-fist-raised';
-    }
-    function fmt(val) {
-        return val.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+    function getImage(name) {
+        for (const [re, url] of imageMap) if (re.test(name)) return url;
+        return 'https://i.gyazo.com/5e140428c5ba0c0bffbd1f496977d5e6.png'; // fallback: capacete
     }
 
-    function getCart() {
-        return JSON.parse(sessionStorage.getItem('vitrinni_cart') || '[]');
+    // Category label map
+    const categoryMap = [
+        [/luva|boxe|sparring|bandagem|capacete|shorts.*muay|muay/i, 'Muay Thai'],
+        [/kimono|judogi|faixa.*judo|judo/i,                          'Judô'],
+        [/faixa|rashguard|kimono.*jiu|jiu.jitsu/i,                   'Jiu-Jitsu'],
+        [/caneleira|tatame|saco|bastão|manequim|espelho/i,            'Treino'],
+        [/dobok|taekwondo|colete/i,                                   'Taekwondo'],
+        [/protetor|joelheira|bandagem|bolsa/i,                        'Proteção'],
+    ];
+    function getCategory(name, store) {
+        for (const [re, label] of categoryMap) if (re.test(name)) return label;
+        return store.split(' ')[0].toUpperCase();
     }
 
-    function renderDropdown() {
-        const cart = getCart();
-        const badge = document.getElementById('cartCountBadge');
-        const itemsEl = document.getElementById('cartDropdownItems');
-        const footerEl = document.getElementById('cartDropdownFooter');
-        const totalEl = document.getElementById('cartDropdownTotal');
+    try {
+        const res  = await fetch('/api/products/featured');
+        const data = await res.json();
+        if (!data.success || !data.products.length) return;
 
-        const totalQty = cart.reduce((s, i) => s + i.qty, 0);
-
-        // badge
-        if (totalQty > 0) {
-            badge.textContent = totalQty;
-            badge.style.display = 'inline';
-        } else {
-            badge.style.display = 'none';
+        const products = data.products;
+        const COLS = 4;
+        const slides = [];
+        for (let i = 0; i < products.length; i += COLS) {
+            slides.push(products.slice(i, i + COLS));
         }
 
-        if (!cart.length) {
-            itemsEl.innerHTML = `<div class="cart-dropdown-empty">
-                <i class="fas fa-cart-arrow-down"></i>
-                <p>Carrinho vazio</p>
-            </div>`;
-            footerEl.style.display = 'none';
-            return;
-        }
+        const track = document.getElementById('slideshowTrack');
+        // Each slide is 100% of the container; track is slides.length × container width
+        track.style.width = (slides.length * 100) + '%';
 
-        const total = cart.reduce((s, i) => s + i.price * i.qty, 0);
-        itemsEl.innerHTML = cart.map(i => `
-            <div class="cart-drop-item">
-                <div class="cart-drop-icon"><i class="${getIcon(i.name)}"></i></div>
-                <div class="cart-drop-info">
-                    <div class="cart-drop-name">${i.name}</div>
-                    <div class="cart-drop-qty">x${i.qty} · ${i.store_name}</div>
-                </div>
-                <div class="cart-drop-price">${fmt(i.price * i.qty)}</div>
+        track.innerHTML = slides.map(group => `
+            <div class="product-slide" style="width:${100 / slides.length}%">
+                ${group.map(p => `
+                <div class="product-card">
+                    <div class="product-img">
+                        <img src="${getImage(p.name)}" alt="${p.name}" loading="lazy"
+                             onerror="this.style.display='none';this.nextElementSibling.style.display='block'">
+                        <i class="${getIcon(p.name)}" style="display:none;font-size:4rem;color:#F9A825;"></i>
+                    </div>
+                    <div class="product-info">
+                        <div class="product-category">${getCategory(p.name, p.store_name)}</div>
+                        <h4>${p.name}</h4>
+                        <div class="product-price">${fmt(p.price)}</div>
+                        <button class="btn-product"
+                            data-id="${p.id}"
+                            data-name="${p.name.replace(/"/g, '&quot;')}"
+                            data-store="${p.store_name.replace(/"/g, '&quot;')}"
+                            data-price="${p.price}"
+                            onclick="addToCart(+this.dataset.id, this.dataset.name, this.dataset.store, +this.dataset.price, this)">
+                            Comprar
+                        </button>
+                    </div>
+                </div>`).join('')}
             </div>`).join('');
 
-        totalEl.textContent = fmt(total);
-        footerEl.style.display = 'block';
-    }
+        // slideshow nav — translateX by (100 / slides.length)% per step
+        // since track width = slides.length × 100%, each slide = 100%/slides.length of track
+        let current = 0;
+        const total = slides.length;
+        const dotsEl = document.getElementById('productDots');
 
-    window.toggleCartDropdown = function() {
-        const dd = document.getElementById('cartDropdown');
-        dd.classList.toggle('open');
-        if (dd.classList.contains('open')) renderDropdown();
-    };
-
-    // close when clicking outside
-    document.addEventListener('click', function(e) {
-        const wrapper = document.getElementById('carrinhoWrapper');
-        if (wrapper && !wrapper.contains(e.target)) {
-            document.getElementById('cartDropdown').classList.remove('open');
+        function go(idx) {
+            current = (idx + total) % total;
+            track.style.transform = `translateX(-${current * (100 / slides.length)}%)`;
+            dotsEl.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === current));
         }
-    });
 
-    // render badge on page load
-    renderDropdown();
+        dotsEl.innerHTML = slides.map((_, i) =>
+            `<span class="dot${i === 0 ? ' active' : ''}" data-i="${i}"></span>`
+        ).join('');
+        dotsEl.addEventListener('click', e => {
+            if (e.target.classList.contains('dot')) go(+e.target.dataset.i);
+        });
+        document.getElementById('prevProductSlide').onclick = () => go(current - 1);
+        document.getElementById('nextProductSlide').onclick = () => go(current + 1);
+
+    } catch(e) {
+        console.warn('Could not load featured products:', e);
+    }
 })();
+
+
+
+// init cart badge on load
+renderCartDropdown();
 </script>
 
+<script src="{{ url_for('static', filename='navbar.js') }}"></script>
 </body>
 </html>

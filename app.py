@@ -7,25 +7,26 @@ Run with: python app.py
 """
 
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
-import os
-import sqlite3
-from datetime import datetime
 from functions import (
     init_users_db, init_stores_db,
     user_signup, user_login,
     _hash_password, _get_conn,
-    STORES_DB, seed_stores
+    STORES_DB, seed_stores,
+    list_all_products,
 )
 
 app = Flask(__name__, template_folder="templates")
 app.secret_key = "vitrinni-secret-key-2024"
 
-# Inicialização dos BDs
+# ── Init + seed on startup ──
 init_users_db()
 init_stores_db()
-seed_stores()  # Popula o BD de lojas com dados iniciais (se vazio)
+seed_stores()
 
-# Rotas para páginas HTML
+
+# ══════════════════════════════════════════════
+# PAGE ROUTES
+# ══════════════════════════════════════════════
 
 @app.route("/")
 @app.route("/main.html")
@@ -49,8 +50,22 @@ def logout():
     session.clear()
     return redirect(url_for("index"))
 
+@app.route("/loja.html")
+def loja_page():
+    return render_template("loja.html", user=session.get("user"))
 
-# Rotas de APIs para login/cadastro
+@app.route("/finalizar.html")
+def finalizar_page():
+    return render_template("finalizar.html", user=session.get("user"))
+
+@app.route("/suporte.html")
+def suporte_page():
+    return render_template("suporte.html", user=session.get("user"))
+
+
+# ══════════════════════════════════════════════
+# API ROUTES
+# ══════════════════════════════════════════════
 
 @app.route("/api/login", methods=["POST"])
 def api_login():
@@ -74,7 +89,6 @@ def api_signup():
         password=data.get("password", ""),
     )
     if result["success"]:
-        # auto-login after sign-up
         login_result = user_login(data.get("email", ""), data.get("password", ""))
         if login_result["success"]:
             session["user"] = login_result["user"]
@@ -89,22 +103,22 @@ def api_session():
 @app.route("/api/products")
 def api_products():
     """Return all products with their store name, price and stock."""
-    from functions import list_all_products
     result = list_all_products()
     return jsonify(result)
 
 
-@app.route("/loja.html")
-def loja_page():
-    return render_template("loja.html", user=session.get("user"))
+@app.route("/api/products/featured")
+def api_products_featured():
+    """Return up to 8 products for the main page featured slideshow."""
+    result = list_all_products()
+    if result["success"]:
+        result["products"] = result["products"][:8]
+    return jsonify(result)
 
 
-@app.route("/finalizar.html")
-def finalizar_page():
-    return render_template("finalizar.html", user=session.get("user"))
-
-
-# Inicialização do site
+# ══════════════════════════════════════════════
+# ENTRY POINT  —  must be last
+# ══════════════════════════════════════════════
 
 if __name__ == "__main__":
     print("\n  Vitrinni rodando em http://127.0.0.1:5000\n")
